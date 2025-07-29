@@ -1,0 +1,82 @@
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-medium);
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+/* Variants */
+.default {
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.elevated {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.outlined {
+  border: 1px solid var(--color-gray-300);
+  box-shadow: none;
+}
+
+.ghost {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+/* Padding variants */
+.padding-none {
+  padding: 0;
+}
+
+.padding-small {
+  padding: var(--spacing-md);
+}
+
+.padding-default {
+  padding: var(--spacing-lg);
+}
+
+.padding-large {
+  padding: var(--spacing-xl);
+}
+
+/* Interactive states */
+.hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.clickable {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.clickable:active {
+  transform: translateY(0);
+}
+
+.clickable:focus-visible {
+  outline: 2px solid var(--color-primary-blue);
+  outline-offset: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .padding-default {
+    padding: var(--spacing-md);
+  }
+  
+  .padding-large {
+    padding: var(--spacing-lg);
+  }
+}

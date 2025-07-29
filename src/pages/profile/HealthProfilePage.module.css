@@ -1,0 +1,640 @@
+.healthProfile {
+  padding: var(--spacing-lg);
+  background: var(--color-gray-100);
+  min-height: calc(100vh - var(--height-header));
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+}
+
+.titleSection {
+  flex: 1;
+}
+
+.title {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-sm);
+}
+
+.subtitle {
+  font-size: var(--font-size-body);
+  color: var(--color-gray-700);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: var(--color-white);
+  border-radius: var(--radius-large);
+  padding: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: none;
+  border: none;
+  border-radius: var(--radius-medium);
+  cursor: pointer;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-600);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.tab:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
+}
+
+.tab.active {
+  background: var(--color-primary-blue);
+  color: var(--color-white);
+}
+
+.tabIcon {
+  font-size: 16px;
+}
+
+/* Tab Content */
+.tabContent {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Overview Tab */
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.summaryCard {
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.cardTitle {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-700);
+  margin-bottom: var(--spacing-md);
+}
+
+.cardValue {
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-blue);
+  margin-bottom: var(--spacing-sm);
+}
+
+.cardSubtext {
+  font-size: var(--font-size-caption);
+  color: var(--color-gray-500);
+}
+
+/* Activity Card */
+.activityCard {
+  padding: var(--spacing-lg);
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-small);
+}
+
+.activityIcon {
+  width: 40px;
+  height: 40px;
+  background: var(--color-white);
+  border-radius: var(--radius-small);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.activityContent {
+  flex: 1;
+}
+
+.activityTitle {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-xs);
+}
+
+.activityDate {
+  font-size: var(--font-size-caption);
+  color: var(--color-gray-500);
+}
+
+.activityStatus {
+  flex-shrink: 0;
+}
+
+.statusNormal {
+  background: var(--color-success);
+  color: var(--color-white);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-small);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+}
+
+.statusWarning {
+  background: var(--color-warning);
+  color: var(--color-white);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-small);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Conditions */
+.conditions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.conditionCard {
+  padding: var(--spacing-lg);
+}
+
+.conditionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+}
+
+.conditionTitle h3 {
+  font-size: var(--font-size-body-large);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-xs);
+}
+
+.icdCode {
+  font-size: var(--font-size-caption);
+  color: var(--color-gray-500);
+  font-weight: var(--font-weight-medium);
+}
+
+.conditionMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.status {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-small);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status.active {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+
+.status.inactive {
+  background: var(--color-gray-300);
+  color: var(--color-gray-700);
+}
+
+.trend {
+  font-size: 18px;
+}
+
+.conditionSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.label {
+  font-size: var(--font-size-caption);
+  color: var(--color-gray-500);
+  font-weight: var(--font-weight-medium);
+}
+
+.value {
+  font-size: var(--font-size-body);
+  color: var(--color-gray-900);
+}
+
+.conditionDetails {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-gray-300);
+}
+
+.detailSection {
+  margin-bottom: var(--spacing-lg);
+}
+
+.detailSection h4 {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-sm);
+}
+
+.detailSection ul {
+  list-style: none;
+  padding: 0;
+}
+
+.detailSection li {
+  padding: var(--spacing-xs) 0;
+  color: var(--color-gray-700);
+}
+
+.detailSection p {
+  color: var(--color-gray-700);
+  line-height: 1.5;
+}
+
+.expandButton {
+  background: none;
+  border: none;
+  color: var(--color-primary-blue);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--spacing-md);
+  transition: color var(--transition-fast);
+}
+
+.expandButton:hover {
+  color: #0052CC;
+}
+
+/* Medications */
+.medications {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.medicationCard {
+  padding: var(--spacing-lg);
+}
+
+.medicationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+}
+
+.medicationName {
+  font-size: var(--font-size-body-large);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-xs);
+}
+
+.medicationDosage {
+  font-size: var(--font-size-body);
+  color: var(--color-gray-700);
+  margin: 0;
+}
+
+.medicationDetails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.detailRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.medicationInstructions {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-small);
+}
+
+.medicationInstructions h4 {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-sm);
+}
+
+.medicationInstructions p {
+  color: var(--color-gray-700);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.sideEffects h4 {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-sm);
+}
+
+.sideEffectsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.sideEffect {
+  background: var(--color-warning);
+  color: var(--color-white);
+  font-size: var(--font-size-small);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-small);
+}
+
+/* Vitals */
+.vitals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.vitalsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.vitalsHeader h3 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+}
+
+.timeframeSelect {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-small);
+  font-size: var(--font-size-body);
+  background: var(--color-white);
+  cursor: pointer;
+}
+
+.vitalsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.vitalCard {
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+.vitalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.vitalType {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-900);
+}
+
+.vitalStatus {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vitalValue {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-blue);
+  margin-bottom: var(--spacing-sm);
+}
+
+.vitalUnit {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-gray-500);
+  margin-left: var(--spacing-xs);
+}
+
+.vitalDate {
+  font-size: var(--font-size-caption);
+  color: var(--color-gray-500);
+}
+
+/* Labs */
+.labs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.labCards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.labCard {
+  padding: var(--spacing-lg);
+}
+
+.labHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+}
+
+.labName {
+  font-size: var(--font-size-body-large);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-xs);
+}
+
+.labMeta {
+  font-size: var(--font-size-caption);
+  color: var(--color-gray-500);
+  margin: 0;
+}
+
+.labResults {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.resultRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1fr;
+  gap: var(--spacing-md);
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-small);
+}
+
+.resultName {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-900);
+}
+
+.resultValue {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.resultValue .value {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+}
+
+.resultValue .unit {
+  font-size: var(--font-size-caption);
+  color: var(--color-gray-500);
+}
+
+.resultRange {
+  font-size: var(--font-size-caption);
+  color: var(--color-gray-500);
+}
+
+.resultStatus {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .overviewGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .conditionSummary,
+  .medicationDetails {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .vitalsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .resultRow {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xs);
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .healthProfile {
+    padding: var(--spacing-md);
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: stretch;
+  }
+  
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .overviewGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .conditionSummary,
+  .medicationDetails {
+    grid-template-columns: 1fr;
+  }
+  
+  .vitalsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .vitalsHeader {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: stretch;
+  }
+  
+  .conditionHeader,
+  .medicationHeader,
+  .labHeader {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: stretch;
+  }
+}
