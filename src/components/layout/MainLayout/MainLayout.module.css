@@ -1,0 +1,242 @@
+/* 🎨 CLEAN MAIN LAYOUT - Like Reference Image */
+
+.mainLayout {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  background-color: var(--bg-200);
+  transition: margin-left var(--transition-slow);
+}
+
+.mainContent {
+  padding: var(--content-padding);
+  min-height: 100vh;
+  max-width: 1200px;
+  width: 100%;
+}
+
+/* ✅ PAGE HEADER - Clean and minimal */
+.pageHeader {
+  margin-bottom: var(--space-8);
+}
+
+.pageTitle {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-100);
+  margin-bottom: var(--space-2);
+}
+
+.pageSubtitle {
+  font-size: var(--text-base);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.breadcrumb {
+  font-size: var(--text-sm);
+  color: var(--gray-400);
+  margin-bottom: var(--space-4);
+}
+
+.breadcrumb a {
+  color: var(--accent-200);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* ✅ CONTENT SECTIONS */
+.contentSection {
+  margin-bottom: var(--space-8);
+}
+
+.sectionTitle {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-100);
+  margin-bottom: var(--space-4);
+}
+
+/* ✅ CARDS GRID - Like reference image */
+.cardsGrid {
+  display: grid;
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.cardsGrid.cols1 {
+  grid-template-columns: 1fr;
+}
+
+.cardsGrid.cols2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.cardsGrid.cols3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.cardsGrid.cols4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* ✅ CLEAN CARD STYLES */
+.card {
+  background-color: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-base);
+  border-color: var(--gray-300);
+}
+
+.cardHeader {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.cardTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-100);
+  margin-bottom: var(--space-1);
+}
+
+.cardSubtitle {
+  font-size: var(--text-sm);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.cardBody {
+  padding: var(--space-6);
+}
+
+.cardFooter {
+  padding: var(--space-6);
+  border-top: 1px solid var(--gray-200);
+  background-color: var(--gray-50);
+}
+
+/* ✅ MOBILE RESPONSIVE */
+@media (max-width: 1024px) {
+  .mainLayout {
+    margin-left: 0;
+  }
+  
+  .cardsGrid.cols4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .cardsGrid.cols3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    padding: var(--space-4);
+  }
+  
+  .cardsGrid.cols4,
+  .cardsGrid.cols3,
+  .cardsGrid.cols2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .pageTitle {
+    font-size: var(--text-2xl);
+  }
+  
+  .cardHeader,
+  .cardBody,
+  .cardFooter {
+    padding: var(--space-4);
+  }
+}
+
+/* ✅ LOADING STATES */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+  color: var(--gray-500);
+}
+
+.loadingSpinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--gray-200);
+  border-top: 2px solid var(--accent-200);
+  border-radius: var(--radius-full);
+  animation: spin 1s linear infinite;
+  margin-right: var(--space-3);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ✅ EMPTY STATES */
+.emptyState {
+  text-align: center;
+  padding: var(--space-12);
+  color: var(--gray-500);
+}
+
+.emptyIcon {
+  font-size: var(--text-4xl);
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-100);
+  margin-bottom: var(--space-2);
+}
+
+.emptyMessage {
+  font-size: var(--text-base);
+  margin-bottom: var(--space-4);
+}
+
+/* ✅ ACTION BUTTONS */
+.actionButton {
+  background-color: var(--accent-200);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-family);
+}
+
+.actionButton:hover {
+  background-color: var(--accent-100);
+}
+
+.actionButton.secondary {
+  background-color: var(--white);
+  color: var(--text-100);
+  border: 1px solid var(--gray-200);
+}
+
+.actionButton.secondary:hover {
+  background-color: var(--gray-50);
+  border-color: var(--gray-300);
+}

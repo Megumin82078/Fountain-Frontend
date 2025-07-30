@@ -1,210 +1,43 @@
-/* 🎨 CLEAN MINIMAL CARD SYSTEM */
+/* Card - Clean and Simple */
 
 .card {
-  background-color: var(--bg-100);
-  border: 1px solid var(--bg-400);
+  background-color: var(--white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  
-  transition: var(--transition-fast);
+  border: 1px solid var(--gray-200);
   overflow: hidden;
-  width: 100%;
+  transition: var(--transition);
 }
 
-/* ✅ PADDING VARIANTS */
-.noPadding {
-  padding: 0;
+.card:hover {
+  box-shadow: var(--shadow-base);
+  border-color: var(--gray-300);
 }
 
-.smallPadding {
-  padding: var(--space-4);
+.cardHeader {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--gray-200);
 }
 
-.basePadding {
+.cardTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-100);
+  margin-bottom: var(--space-1);
+}
+
+.cardSubtitle {
+  font-size: var(--text-sm);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.cardBody {
   padding: var(--space-6);
 }
 
-.largePadding {
-  padding: var(--space-8);
-}
-
-/* ✅ STYLE VARIANTS */
-.default {
-  /* Uses base styles */
-}
-
-.elevated {
-  box-shadow: var(--shadow-md);
-  border-color: var(--bg-300);
-}
-
-.outlined {
-  border-width: 2px;
-  border-color: var(--accent-200);
-  box-shadow: none;
-}
-
-.flat {
-  box-shadow: none;
-  border: none;
-  background-color: transparent;
-}
-
-/* ✅ INTERACTIVE STATES */
-.hoverable {
-  cursor: pointer;
-}
-
-.hoverable:hover {
-  box-shadow: var(--shadow-base);
-  border-color: var(--bg-300);
-  transform: translateY(-1px);
-}
-
-.clickable {
-  cursor: pointer;
-  font-family: inherit;
-  text-align: inherit;
-  color: inherit;
-  background: inherit;
-  border: inherit;
-  outline: none;
-  width: 100%;
-  text-decoration: none;
-}
-
-.clickable:hover {
-  box-shadow: var(--shadow-base);
-  border-color: var(--bg-300);
-  transform: translateY(-1px);
-}
-
-.clickable:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-xs);
-}
-
-.clickable:focus-visible {
-  outline: 2px solid var(--accent-200);
-  outline-offset: 2px;
-}
-
-/* ✅ COLORED VARIANTS */
-.primary {
-  background-color: var(--primary-100);
-  border-color: var(--primary-200);
-}
-
-.accent {
-  background-color: var(--accent-100);
-  border-color: var(--accent-200);
-  color: var(--bg-100);
-}
-
-.success {
-  background-color: #f0fdf4;
-  border-color: var(--success);
-}
-
-.warning {
-  background-color: #fefce8;
-  border-color: var(--warning);
-}
-
-.error {
-  background-color: #fef2f2;
-  border-color: var(--error);
-}
-
-/* ✅ LOADING STATE */
-.loading {
-  position: relative;
-  overflow: hidden;
-}
-
-.loading::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-/* ✅ SELECTED STATE */
-.selected {
-  border-color: var(--accent-200);
-  box-shadow: 0 0 0 1px var(--accent-200);
-  background-color: var(--primary-100);
-}
-
-/* ✅ DISABLED STATE */
-.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-  cursor: not-allowed;
-}
-
-/* ✅ RESPONSIVE BEHAVIOR */
-@media (max-width: 768px) {
-  .hoverable:hover,
-  .clickable:hover {
-    transform: none;
-  }
-  
-  .clickable:active {
-    transform: scale(0.98);
-  }
-}
-
-/* ✅ HIGH CONTRAST MODE */
-@media (prefers-contrast: high) {
-  .card {
-    border-width: 2px;
-  }
-  
-  .outlined {
-    border-width: 3px;
-  }
-}
-
-/* ✅ REDUCED MOTION */
-@media (prefers-reduced-motion: reduce) {
-  .card {
-    transition: none;
-  }
-  
-  .hoverable:hover,
-  .clickable:hover,
-  .clickable:active {
-    transform: none;
-  }
-  
-  .loading::after {
-    animation: none;
-  }
-}
-
-/* ✅ PRINT STYLES */
-@media print {
-  .card {
-    box-shadow: none;
-    border: 1px solid var(--text-400);
-  }
+.cardFooter {
+  padding: var(--space-6);
+  border-top: 1px solid var(--gray-200);
+  background-color: var(--gray-50);
 }

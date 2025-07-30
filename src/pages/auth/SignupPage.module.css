@@ -1,6 +1,6 @@
-/* Login Page - Clean and Simple */
+/* 🎨 CLEAN SIGNUP PAGE - Minimal & Professional */
 
-.loginPage {
+.signupPage {
   min-height: 100vh;
   background-color: var(--bg-200);
   display: flex;
@@ -9,9 +9,9 @@
   padding: var(--space-4);
 }
 
-.loginContainer {
+.signupContainer {
   width: 100%;
-  max-width: 400px;
+  max-width: 480px;
   background-color: var(--white);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
@@ -19,7 +19,7 @@
   overflow: hidden;
 }
 
-/* Header */
+/* ✅ HEADER SECTION */
 .header {
   padding: var(--space-8) var(--space-6) var(--space-6);
   text-align: center;
@@ -53,13 +53,19 @@
   margin: 0;
 }
 
-/* Form */
+/* ✅ FORM SECTION */
 .form {
   padding: var(--space-6);
 }
 
 .formGroup {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-5);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
 }
 
 .label {
@@ -93,15 +99,39 @@
   color: var(--gray-400);
 }
 
-/* Form Options */
+.passwordContainer {
+  position: relative;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-base);
+  transition: var(--transition);
+  font-size: 18px;
+}
+
+.passwordToggle:hover {
+  color: var(--gray-600);
+  background-color: var(--gray-50);
+}
+
+/* ✅ FORM OPTIONS */
 .formOptions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-bottom: var(--space-6);
 }
 
-.rememberMe {
+.agreeToTerms {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -127,23 +157,22 @@
   cursor: pointer;
 }
 
-.forgotPassword {
-  font-size: var(--text-sm);
+.termsLink {
   color: var(--accent-200);
   text-decoration: none;
   font-weight: var(--font-medium);
   transition: var(--transition);
 }
 
-.forgotPassword:hover {
+.termsLink:hover {
   color: var(--accent-100);
   text-decoration: underline;
 }
 
-/* Submit Button */
+/* ✅ SUBMIT BUTTON */
 .submitButton {
   width: 100%;
-  height: 3rem;
+  height: var(--height-button-lg);
   background-color: var(--accent-200);
   color: var(--white);
   border: none;
@@ -162,13 +191,76 @@
   box-shadow: var(--shadow-base);
 }
 
+.submitButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .submitButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
 
-/* Footer */
+/* ✅ DIVIDER */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: var(--space-6) 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--gray-200);
+}
+
+.dividerText {
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--gray-500);
+  background-color: var(--white);
+}
+
+/* ✅ OAUTH BUTTONS */
+.oauthButtons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.oauthButton {
+  width: 100%;
+  height: var(--height-button);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  background-color: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  color: var(--text-100);
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-family);
+}
+
+.oauthButton:hover {
+  background-color: var(--gray-50);
+  border-color: var(--gray-300);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.oauthButton:active {
+  transform: translateY(0);
+}
+
+/* ✅ FOOTER */
 .footer {
   padding: var(--space-6);
   text-align: center;
@@ -182,25 +274,78 @@
   margin-bottom: var(--space-2);
 }
 
-.signupLink {
+.loginLink {
   color: var(--accent-200);
   text-decoration: none;
   font-weight: var(--font-medium);
   transition: var(--transition);
 }
 
-.signupLink:hover {
+.loginLink:hover {
   color: var(--accent-100);
   text-decoration: underline;
 }
 
-/* Mobile */
+/* ✅ ERROR MESSAGES */
+.error {
+  color: var(--error);
+  font-size: var(--text-sm);
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.errorIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--error);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ✅ LOADING STATE */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.loadingSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: var(--radius-full);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ✅ RESPONSIVE DESIGN */
 @media (max-width: 768px) {
-  .loginPage {
+  .signupPage {
     padding: var(--space-2);
   }
   
-  .loginContainer {
+  .signupContainer {
+    max-width: none;
+    width: 100%;
     margin: 0 var(--space-2);
   }
   
@@ -218,5 +363,26 @@
   
   .title {
     font-size: var(--text-xl);
+  }
+  
+  .formRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .formOptions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  
+  .oauthButtons {
+    gap: var(--space-2);
+  }
+  
+  .title {
+    font-size: var(--text-lg);
   }
 }
