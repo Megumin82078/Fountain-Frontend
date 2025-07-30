@@ -52,11 +52,31 @@ const LoginPage = () => {
 
   return (
     <div className={styles.authPage}>
-      <div className={styles.authContainer}>
-        <div className={styles.logo}>
-          <h1 className={styles.logoText}>Fountain</h1>
-          <p className={styles.logoSubtext}>Health Records Management</p>
+      {/* Left Side - Branding */}
+      <div className={styles.authBranding}>
+        <div className={styles.brandingContent}>
+          <h1 className={styles.brandingTitle}>
+            Your Complete Health Story in One Place
+          </h1>
+          <p className={styles.brandingSubtitle}>
+            Securely manage, organize, and share your medical records with AI-powered insights and healthcare-grade security.
+          </p>
+          <div className={styles.brandingFeatures}>
+            <div className={styles.brandingFeature}>Request records from any provider instantly</div>
+            <div className={styles.brandingFeature}>AI-powered organization and insights</div>
+            <div className={styles.brandingFeature}>HIPAA compliant and secure sharing</div>
+            <div className={styles.brandingFeature}>Complete control over your health data</div>
+          </div>
         </div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className={styles.authContainer}>
+        <div className={styles.formWrapper}>
+          <div className={styles.logo}>
+            <h1 className={styles.logoText}>Fountain</h1>
+            <p className={styles.logoSubtext}>Health Records Management</p>
+          </div>
 
         <div className={styles.header}>
           <h2 className={styles.title}>Welcome Back</h2>
@@ -147,6 +167,7 @@ const LoginPage = () => {
               Sign up
             </Link>
           </span>
+        </div>
         </div>
       </div>
     </div>

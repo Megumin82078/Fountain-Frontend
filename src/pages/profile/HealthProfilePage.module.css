@@ -1,7 +1,11 @@
+/* 🎨 PROFESSIONAL DESKTOP-FIRST HEALTH PROFILE */
 .healthProfile {
-  padding: var(--spacing-lg);
-  background: var(--color-gray-100);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--bg-200);
   min-height: calc(100vh - var(--height-header));
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Header */
@@ -17,10 +21,14 @@
 }
 
 .title {
-  font-size: var(--font-size-h1);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-gray-900);
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-100);
   margin-bottom: var(--spacing-sm);
+  background: linear-gradient(135deg, var(--text-100), var(--accent-200));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .subtitle {
@@ -97,6 +105,41 @@
 .summaryCard {
   text-align: center;
   padding: var(--spacing-xl);
+  background: linear-gradient(135deg, var(--bg-100), var(--primary-100));
+  border: 1px solid var(--bg-300);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.summaryCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--accent-100), var(--primary-200));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.summaryCard > * {
+  position: relative;
+  z-index: 1;
+}
+
+.summaryCard:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--accent-200);
+}
+
+.summaryCard:hover::before {
+  opacity: 0.1;
 }
 
 .cardTitle {
@@ -107,10 +150,11 @@
 }
 
 .cardValue {
-  font-size: var(--font-size-display);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary-blue);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--accent-200);
   margin-bottom: var(--spacing-sm);
+  text-shadow: 0 2px 4px rgba(0, 102, 140, 0.1);
 }
 
 .cardSubtext {
@@ -195,7 +239,42 @@
 }
 
 .conditionCard {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  background: var(--bg-100);
+  border: 1px solid var(--bg-300);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.conditionCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary-100), var(--accent-100));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.conditionCard > * {
+  position: relative;
+  z-index: 1;
+}
+
+.conditionCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--accent-200);
+}
+
+.conditionCard:hover::before {
+  opacity: 0.05;
 }
 
 .conditionHeader {

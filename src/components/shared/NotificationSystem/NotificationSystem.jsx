@@ -21,11 +21,15 @@ export const NotificationProvider = ({ children }) => {
     const newNotification = {
       id,
       type: 'info',
-      duration: 5000,
+      duration: 4000,  // Shorter default duration
       ...notification,
     };
 
-    setNotifications(prev => [...prev, newNotification]);
+    setNotifications(prev => {
+      // Limit to maximum 3 notifications at once
+      const updated = [...prev, newNotification];
+      return updated.slice(-3);
+    });
 
     // Auto-remove notification after duration
     if (newNotification.duration > 0) {
@@ -59,8 +63,8 @@ export const NotificationProvider = ({ children }) => {
     return addNotification({
       type: 'error',
       message,
-      icon: '❌',
-      duration: 7000, // Longer for errors
+      icon: '⚠️',  // Less aggressive icon
+      duration: 6000, // Shorter duration
       ...options
     });
   };
@@ -70,6 +74,7 @@ export const NotificationProvider = ({ children }) => {
       type: 'warning',
       message,
       icon: '⚠️',
+      duration: 4000,  // Standard duration
       ...options
     });
   };
@@ -79,6 +84,7 @@ export const NotificationProvider = ({ children }) => {
       type: 'info',
       message,
       icon: 'ℹ️',
+      duration: 3000,  // Shorter for info
       ...options
     });
   };

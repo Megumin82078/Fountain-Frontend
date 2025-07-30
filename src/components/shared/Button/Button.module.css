@@ -1,119 +1,229 @@
+/* 🎨 CLEAN MINIMAL BUTTON SYSTEM */
+
 .button {
-  border: none;
-  border-radius: var(--radius-medium);
-  font-family: var(--font-family);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
-  position: relative;
+  gap: var(--space-2);
+  
+  font-family: var(--font-family);
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  
+  cursor: pointer;
+  transition: var(--transition-fast);
   text-decoration: none;
-  outline: none;
+  
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .button:focus-visible {
-  box-shadow: var(--shadow-focus);
+  outline: 2px solid var(--accent-200);
+  outline-offset: 2px;
 }
 
-/* Variants */
-.primary {
-  background-color: var(--color-primary-blue);
-  color: var(--color-white);
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
-.primary:hover:not(.disabled):not(.loading) {
-  background-color: #0052CC;
-  transform: translateY(-1px);
-}
-
-.secondary {
-  background-color: var(--color-white);
-  color: var(--color-gray-700);
-  border: 1px solid var(--color-gray-300);
-}
-
-.secondary:hover:not(.disabled):not(.loading) {
-  background-color: var(--color-gray-100);
-}
-
-.ghost {
-  background-color: transparent;
-  color: var(--color-gray-700);
-}
-
-.ghost:hover:not(.disabled):not(.loading) {
-  background-color: rgba(0, 0, 0, 0.04);
-}
-
-.danger {
-  background-color: var(--color-error);
-  color: var(--color-white);
-}
-
-.danger:hover:not(.disabled):not(.loading) {
-  background-color: #E6342B;
-  transform: translateY(-1px);
-}
-
-/* Sizes */
+/* ✅ SIZE VARIANTS */
 .small {
-  height: var(--height-button-small);
-  padding: 0 var(--spacing-md);
-  font-size: var(--font-size-caption);
-  border-radius: var(--radius-small);
+  height: var(--height-button-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
 }
 
-.medium {
-  height: var(--height-button-secondary);
-  padding: 0 var(--spacing-lg);
-  font-size: var(--font-size-body);
+.base {
+  height: var(--height-button-base);
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
 }
 
 .large {
-  height: var(--height-button-primary);
-  padding: 0 var(--spacing-xl);
-  font-size: var(--font-size-body);
+  height: var(--height-button-lg);
+  padding: 0 var(--space-6);
+  font-size: var(--text-base);
 }
 
-/* States */
-.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
+/* ✅ STYLE VARIANTS - Clean & Minimal */
+
+/* Primary - Blue accent */
+.primary {
+  background-color: var(--accent-200);
+  color: var(--bg-100);
+  border-color: var(--accent-200);
 }
 
+.primary:hover:not(:disabled) {
+  background-color: var(--accent-100);
+  border-color: var(--accent-100);
+}
+
+.primary:active:not(:disabled) {
+  background-color: var(--accent-200);
+  transform: translateY(1px);
+}
+
+/* Secondary - White with border */
+.secondary {
+  background-color: var(--bg-100);
+  color: var(--text-100);
+  border-color: var(--bg-400);
+}
+
+.secondary:hover:not(:disabled) {
+  background-color: var(--bg-200);
+  border-color: var(--bg-300);
+}
+
+.secondary:active:not(:disabled) {
+  background-color: var(--bg-100);
+  transform: translateY(1px);
+}
+
+/* Outline - Transparent with colored border */
+.outline {
+  background-color: transparent;
+  color: var(--accent-200);
+  border-color: var(--accent-200);
+}
+
+.outline:hover:not(:disabled) {
+  background-color: var(--primary-100);
+  color: var(--accent-200);
+}
+
+.outline:active:not(:disabled) {
+  background-color: var(--primary-200);
+  transform: translateY(1px);
+}
+
+/* Ghost - Transparent with no border */
+.ghost {
+  background-color: transparent;
+  color: var(--text-200);
+  border-color: transparent;
+}
+
+.ghost:hover:not(:disabled) {
+  background-color: var(--bg-200);
+  color: var(--text-100);
+}
+
+.ghost:active:not(:disabled) {
+  background-color: var(--bg-300);
+  transform: translateY(1px);
+}
+
+/* Danger - Red for destructive actions */
+.danger {
+  background-color: var(--error);
+  color: var(--bg-100);
+  border-color: var(--error);
+}
+
+.danger:hover:not(:disabled) {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.danger:active:not(:disabled) {
+  background-color: var(--error);
+  transform: translateY(1px);
+}
+
+/* ✅ LOADING STATE */
 .loading {
-  cursor: not-allowed;
+  position: relative;
+  color: transparent;
+  pointer-events: none;
 }
 
-.hiddenText {
-  opacity: 0;
-}
-
-/* Spinner */
-.spinner {
-  width: 16px;
-  height: 16px;
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1rem;
+  height: 1rem;
   border: 2px solid transparent;
   border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  position: absolute;
+}
+
+.loading.primary::after,
+.loading.danger::after {
+  border-top-color: var(--bg-100);
+}
+
+.loading.secondary::after,
+.loading.outline::after,
+.loading.ghost::after {
+  border-top-color: var(--text-100);
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
-/* Responsive */
+/* ✅ ICON SUPPORT */
+.icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.iconOnly {
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+/* ✅ FULL WIDTH */
+.fullWidth {
+  width: 100%;
+}
+
+/* ✅ RESPONSIVE BEHAVIOR */
 @media (max-width: 768px) {
-  .large {
-    height: var(--height-button-secondary);
-    padding: 0 var(--spacing-lg);
-    font-size: var(--font-size-body);
+  .button {
+    touch-action: manipulation;
+  }
+  
+  .button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+/* ✅ HIGH CONTRAST MODE */
+@media (prefers-contrast: high) {
+  .button {
+    border-width: 2px;
+  }
+}
+
+/* ✅ REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+  
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+  
+  .loading::after {
+    animation: none;
   }
 }

@@ -1,18 +1,20 @@
-/* Notification Container */
+/* 🔧 LESS INTRUSIVE NOTIFICATION CONTAINER */
 .notificationContainer {
   position: fixed;
-  top: calc(var(--height-header) + var(--spacing-md));
-  right: var(--spacing-md);
-  z-index: 10000;
+  top: calc(var(--height-header) + var(--space-4));
+  right: var(--space-4);
+  z-index: 1000;  /* Reduced z-index to be less aggressive */
   pointer-events: none;
+  max-height: calc(100vh - var(--height-header) - var(--space-8));
+  overflow: hidden;
 }
 
 .notificationList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
-  max-width: 400px;
-  min-width: 300px;
+  gap: var(--space-2);
+  max-width: 360px;  /* Smaller, less intrusive */
+  min-width: 280px;
 }
 
 /* Individual Notification */

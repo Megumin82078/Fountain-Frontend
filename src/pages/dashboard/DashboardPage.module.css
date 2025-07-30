@@ -1,7 +1,11 @@
+/* 🎨 PROFESSIONAL DESKTOP-FIRST DASHBOARD */
 .dashboard {
-  padding: var(--spacing-lg);
-  background: var(--color-gray-100);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--bg-200);
   min-height: calc(100vh - var(--height-header));
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .header {
@@ -9,10 +13,25 @@
 }
 
 .greeting {
-  font-size: var(--font-size-h1);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-gray-900);
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-100);
   margin-bottom: var(--spacing-sm);
+  background: linear-gradient(135deg, var(--text-100), var(--accent-200), var(--primary-200));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .date {
@@ -74,14 +93,41 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-md);
-  border-radius: var(--radius-small);
+  border-radius: var(--radius-medium);
   margin-bottom: var(--spacing-sm);
-  transition: background-color var(--transition-fast);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.statusItem::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary-100), var(--accent-100));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.statusItem > * {
+  position: relative;
+  z-index: 1;
 }
 
 .statusItem:hover {
-  background-color: var(--color-gray-100);
+  transform: translateY(-2px);
+  border-color: var(--accent-200);
+  box-shadow: var(--shadow-card);
+}
+
+.statusItem:hover::before {
+  opacity: 0.1;
 }
 
 .statusInfo {
@@ -257,9 +303,18 @@
 
 .vitalItem {
   text-align: center;
-  padding: var(--spacing-md);
-  background: var(--color-gray-100);
-  border-radius: var(--radius-small);
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--bg-100), var(--primary-100));
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--bg-300);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-card);
+}
+
+.vitalItem:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--accent-200);
 }
 
 .vitalValue {

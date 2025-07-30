@@ -1,4 +1,7 @@
-/* Global Styles for Fountain Health Records */
+/* 🎨 PROFESSIONAL FOUNTAIN HEALTH GLOBALS */
+
+/* Import Inter font family */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 * {
   box-sizing: border-box;
@@ -8,16 +11,19 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 16px; /* Base font size for rem calculations */
 }
 
 body {
-  font-family: var(--font-family);
-  color: var(--color-black);
-  background-color: var(--color-gray-100);
-  line-height: var(--line-height-body);
+  font-family: var(--font-primary);
+  color: var(--text-200);           /* WCAG AAA compliant secondary text */
+  background-color: var(--bg-100);  /* Professional healthcare background */
+  line-height: var(--line-height-normal);
   font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* Remove default button styles */
@@ -47,38 +53,40 @@ ul, ol {
   list-style: none;
 }
 
-/* Focus styles for accessibility */
+/* ✅ ACCESSIBILITY-FOCUSED INTERACTION STYLES */
 *:focus-visible {
-  outline: 2px solid var(--color-primary-blue);
+  outline: 2px solid var(--accent-200);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* Smooth transitions for interactive elements */
+/* Smooth, professional transitions */
 button, input, a, [role="button"] {
   transition: all var(--transition-fast);
 }
 
-/* Scrollbar styling */
+/* Professional scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-gray-100);
+  background: var(--bg-200);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-gray-300);
+  background: var(--bg-300);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray-500);
+  background: var(--primary-300);
 }
 
-/* Selection styling */
+/* Healthcare-appropriate selection */
 ::selection {
-  background-color: rgba(0, 102, 255, 0.2);
+  background-color: var(--primary-100);
+  color: var(--text-100);
 }
 
 /* App root container */

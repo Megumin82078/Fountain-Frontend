@@ -23,18 +23,11 @@ const DashboardPage = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-      // Show welcome notification for demonstration
-      notifications.showInfo(
-        `Welcome back, ${user?.firstName || 'User'}! Your health dashboard is ready.`,
-        {
-          title: 'Dashboard Updated',
-          duration: 6000
-        }
-      );
-    }, 1500);
+      // Removed intrusive welcome notification - better UX
+    }, 800);  // Faster loading
 
     return () => clearTimeout(timer);
-  }, [user?.firstName, notifications]);
+  }, []);
 
   // Mock data - will be replaced with real API data
   const mockVitals = [

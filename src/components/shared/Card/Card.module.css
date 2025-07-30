@@ -1,82 +1,210 @@
+/* 🎨 CLEAN MINIMAL CARD SYSTEM */
+
 .card {
-  background: var(--color-white);
-  border-radius: var(--radius-large);
-  box-shadow: var(--shadow-card);
-  transition: all var(--transition-medium);
-  border: none;
+  background-color: var(--bg-100);
+  border: 1px solid var(--bg-400);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  
+  transition: var(--transition-fast);
+  overflow: hidden;
   width: 100%;
-  text-align: left;
 }
 
-/* Variants */
-.default {
-  border: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.elevated {
-  box-shadow: var(--shadow-card-hover);
-}
-
-.outlined {
-  border: 1px solid var(--color-gray-300);
-  box-shadow: none;
-}
-
-.ghost {
-  background: transparent;
-  box-shadow: none;
-  border: none;
-}
-
-/* Padding variants */
-.padding-none {
+/* ✅ PADDING VARIANTS */
+.noPadding {
   padding: 0;
 }
 
-.padding-small {
-  padding: var(--spacing-md);
+.smallPadding {
+  padding: var(--space-4);
 }
 
-.padding-default {
-  padding: var(--spacing-lg);
+.basePadding {
+  padding: var(--space-6);
 }
 
-.padding-large {
-  padding: var(--spacing-xl);
+.largePadding {
+  padding: var(--space-8);
 }
 
-/* Interactive states */
+/* ✅ STYLE VARIANTS */
+.default {
+  /* Uses base styles */
+}
+
+.elevated {
+  box-shadow: var(--shadow-md);
+  border-color: var(--bg-300);
+}
+
+.outlined {
+  border-width: 2px;
+  border-color: var(--accent-200);
+  box-shadow: none;
+}
+
+.flat {
+  box-shadow: none;
+  border: none;
+  background-color: transparent;
+}
+
+/* ✅ INTERACTIVE STATES */
+.hoverable {
+  cursor: pointer;
+}
+
 .hoverable:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: var(--shadow-base);
+  border-color: var(--bg-300);
+  transform: translateY(-1px);
 }
 
 .clickable {
   cursor: pointer;
   font-family: inherit;
+  text-align: inherit;
+  color: inherit;
+  background: inherit;
+  border: inherit;
+  outline: none;
+  width: 100%;
+  text-decoration: none;
 }
 
 .clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: var(--shadow-base);
+  border-color: var(--bg-300);
+  transform: translateY(-1px);
 }
 
 .clickable:active {
   transform: translateY(0);
+  box-shadow: var(--shadow-xs);
 }
 
 .clickable:focus-visible {
-  outline: 2px solid var(--color-primary-blue);
+  outline: 2px solid var(--accent-200);
   outline-offset: 2px;
 }
 
-/* Responsive */
+/* ✅ COLORED VARIANTS */
+.primary {
+  background-color: var(--primary-100);
+  border-color: var(--primary-200);
+}
+
+.accent {
+  background-color: var(--accent-100);
+  border-color: var(--accent-200);
+  color: var(--bg-100);
+}
+
+.success {
+  background-color: #f0fdf4;
+  border-color: var(--success);
+}
+
+.warning {
+  background-color: #fefce8;
+  border-color: var(--warning);
+}
+
+.error {
+  background-color: #fef2f2;
+  border-color: var(--error);
+}
+
+/* ✅ LOADING STATE */
+.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ✅ SELECTED STATE */
+.selected {
+  border-color: var(--accent-200);
+  box-shadow: 0 0 0 1px var(--accent-200);
+  background-color: var(--primary-100);
+}
+
+/* ✅ DISABLED STATE */
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* ✅ RESPONSIVE BEHAVIOR */
 @media (max-width: 768px) {
-  .padding-default {
-    padding: var(--spacing-md);
+  .hoverable:hover,
+  .clickable:hover {
+    transform: none;
   }
   
-  .padding-large {
-    padding: var(--spacing-lg);
+  .clickable:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ✅ HIGH CONTRAST MODE */
+@media (prefers-contrast: high) {
+  .card {
+    border-width: 2px;
+  }
+  
+  .outlined {
+    border-width: 3px;
+  }
+}
+
+/* ✅ REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+  
+  .hoverable:hover,
+  .clickable:hover,
+  .clickable:active {
+    transform: none;
+  }
+  
+  .loading::after {
+    animation: none;
+  }
+}
+
+/* ✅ PRINT STYLES */
+@media print {
+  .card {
+    box-shadow: none;
+    border: 1px solid var(--text-400);
   }
 }

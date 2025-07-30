@@ -1,9 +1,14 @@
+/* 🎨 PROFESSIONAL DESKTOP-FIRST REQUEST PAGE */
 .newRequestPage {
-  padding: var(--spacing-lg);
-  background: var(--color-gray-100);
+  background: var(--bg-200);
   min-height: calc(100vh - var(--height-header));
-  max-width: 1200px;
+  width: 100%;
+}
+
+.pageContainer {
+  max-width: 1600px;
   margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem);
 }
 
 /* Header */
@@ -31,12 +36,13 @@
   margin: 0;
 }
 
-/* Progress Steps */
+/* ✅ ENHANCED PROGRESS STEPS WITH DEPTH */
 .progressSteps {
   display: flex;
   justify-content: center;
   margin-bottom: var(--spacing-xxl);
   position: relative;
+  padding: var(--spacing-lg) 0;
 }
 
 .progressSteps::before {
@@ -61,28 +67,34 @@
 }
 
 .stepNumber {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: var(--color-gray-300);
-  color: var(--color-gray-600);
+  background: var(--bg-300);
+  color: var(--text-200);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-body);
   margin-bottom: var(--spacing-md);
-  transition: all var(--transition-medium);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-button);
+  border: 3px solid var(--bg-100);
 }
 
 .step.active .stepNumber {
-  background: var(--color-primary-blue);
-  color: var(--color-white);
+  background: linear-gradient(135deg, var(--accent-200), var(--primary-200));
+  color: var(--bg-100);
+  transform: scale(1.1);
+  box-shadow: 0 8px 25px rgba(0, 102, 140, 0.3);
 }
 
 .step.completed .stepNumber {
-  background: var(--color-success);
-  color: var(--color-white);
+  background: linear-gradient(135deg, var(--color-success), #10b981);
+  color: var(--bg-100);
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
 }
 
 .stepContent {
@@ -200,12 +212,25 @@
   background: #e6342b;
 }
 
-/* Provider Results */
+/* ✅ ENHANCED PROVIDER RESULTS WITH VISUAL HIERARCHY */
 .providerResults h3 {
   font-size: var(--font-size-h3);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-gray-900);
+  color: var(--text-100);
   margin-bottom: var(--spacing-lg);
+  position: relative;
+  padding-bottom: var(--spacing-md);
+}
+
+.providerResults h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-200), var(--primary-200));
+  border-radius: 2px;
 }
 
 .providerGrid {
@@ -217,18 +242,52 @@
 .providerCard {
   padding: var(--spacing-lg);
   border: 2px solid transparent;
-  transition: all var(--transition-medium);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  background: var(--bg-100);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.providerCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary-100), var(--accent-100));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.providerCard > * {
+  position: relative;
+  z-index: 1;
 }
 
 .providerCard:hover {
-  border-color: var(--color-primary-blue);
-  transform: translateY(-2px);
+  border-color: var(--accent-200);
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.providerCard:hover::before {
+  opacity: 0.1;
 }
 
 .providerCard.selected {
   border-color: var(--color-success);
-  background: rgba(52, 199, 89, 0.05);
+  background: linear-gradient(135deg, var(--bg-100), #f0fdf4);
+  box-shadow: 0 8px 30px rgba(34, 197, 94, 0.15);
+  transform: translateY(-4px);
+}
+
+.providerCard.selected::before {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  opacity: 0.8;
 }
 
 .providerHeader {
@@ -312,10 +371,11 @@
   margin-bottom: var(--spacing-xs);
 }
 
-/* Request Details */
+/* ✅ REQUEST DETAILS - FULL WIDTH UTILIZATION */
 .requestDetails {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .detailsCard {
@@ -404,13 +464,14 @@
   margin-top: var(--spacing-xs);
 }
 
-/* Review & Submit */
+/* ✅ REVIEW & SUBMIT - FULL WIDTH UTILIZATION */
 .reviewSubmit {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  width: 100%;
 }
 
 .reviewCard {
