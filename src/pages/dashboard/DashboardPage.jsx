@@ -1,0 +1,455 @@
+import React, { useState, useEffect } from 'react';
+import { AppLayout } from '../../components/layout';
+import { useApp } from '../../context/AppContext';
+import { useHealthData } from '../../hooks/useHealthData';
+import { 
+  Button, 
+  Card, 
+  StatCard,
+  HealthCard,
+  Badge, 
+  Alert
+} from '../../components/common';
+import { 
+  ChevronRightIcon, 
+  ExclamationTriangleIcon,
+  SparklesIcon,
+  LightBulbIcon,
+  DocumentTextIcon,
+  ArrowTrendingUpIcon
+} from '@heroicons/react/24/outline';
+
+const DashboardPage = () => {
+  const { state, dispatch } = useApp();
+  const { getHealthSummary, getAbnormalResults } = useHealthData();
+  const [loading, setLoading] = useState(true);
+
+  const healthSummary = getHealthSummary();
+  const abnormalResults = getAbnormalResults();
+
+  // AI Report data - ready for backend integration
+  const [aiReport, setAiReport] = useState({
+    loading: false,
+    lastUpdated: new Date().toISOString(),
+    summary: {
+      healthScore: 85,
+      trend: 'improving',
+      keyInsights: [
+        'Your blood pressure has shown improvement over the past month',
+        'Cholesterol levels are within normal range but require monitoring',
+        'Regular medication adherence detected - keep up the good work!'
+      ]
+    },
+    recommendations: [
+      {
+        id: 'rec-1',
+        priority: 'high',
+        category: 'medication',
+        title: 'Medication Timing Optimization',
+        description: 'Consider taking your blood pressure medication in the evening for better overnight control',
+        impact: 'Could improve blood pressure control by 15-20%'
+      },
+      {
+        id: 'rec-2',
+        priority: 'medium',
+        category: 'lifestyle',
+        title: 'Exercise Routine Enhancement',
+        description: 'Adding 15 minutes of light cardio daily could help reduce cholesterol',
+        impact: 'May reduce LDL cholesterol by 5-10mg/dL'
+      },
+      {
+        id: 'rec-3',
+        priority: 'low',
+        category: 'diet',
+        title: 'Dietary Fiber Increase',
+        description: 'Increase daily fiber intake to support digestive health and cholesterol management',
+        impact: 'Supports overall cardiovascular health'
+      }
+    ],
+    riskFactors: [
+      {
+        factor: 'Cardiovascular',
+        level: 'moderate',
+        score: 35,
+        trend: 'decreasing'
+      },
+      {
+        factor: 'Diabetes',
+        level: 'low',
+        score: 15,
+        trend: 'stable'
+      }
+    ]
+  });
+
+  // Get AI health report from backend
+  const fetchAIReport = async () => {
+    setAiReport(prev => ({ ...prev, loading: true }));
+    try {
+      // TODO: connect to real API when ready
+      // const response = await apiService.getAIHealthReport(state.auth.user?.id);
+      // setAiReport(response);
+      
+      // Fake delay for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setAiReport(prev => ({ ...prev, loading: false }));
+    } catch (error) {
+      console.error('Failed to fetch AI report:', error);
+      setAiReport(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  useEffect(() => {
+    setLoading(false);
+    // Load AI report when page loads
+    fetchAIReport();
+  }, []);
+
+
+  const handleDownloadReport = () => {
+    const reportContent = `
+FOUNTAIN MEDICAL REPORT
+Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+
+=== MEDICAL SUMMARY ===
+Patient Name: ${state.auth.user?.firstName || 'Patient'} ${state.auth.user?.lastName || ''}
+Report Type: Comprehensive Health Summary
+
+=== CONDITIONS ===
+Total Conditions: ${state.healthData.conditions.length}
+${state.healthData.conditions.map(condition => 
+  `- ${condition.name} (${condition.severity} severity, diagnosed ${new Date(condition.diagnosedDate).toLocaleDateString()})`
+).join('\n') || 'No conditions on record'}
+
+=== MEDICATIONS ===
+Total Medications: ${state.healthData.medications.length}
+${state.healthData.medications.map(med => 
+  `- ${med.name} ${med.dosage} - ${med.frequency} (${med.status})`
+).join('\n') || 'No medications on record'}
+
+=== LAB RESULTS ===
+Total Lab Results: ${state.healthData.labs.length}
+${state.healthData.labs.map(lab => 
+  `- ${lab.testName}: ${lab.result} ${lab.unit} (${lab.flagged ? 'FLAGGED' : 'Normal'}) - ${new Date(lab.date).toLocaleDateString()}`
+).join('\n') || 'No lab results on record'}
+
+=== VITAL SIGNS ===
+Total Vitals: ${state.healthData.vitals.length}
+${state.healthData.vitals.map(vital => 
+  `- ${vital.type}: ${vital.value} ${vital.unit} ${vital.abnormal ? '(ABNORMAL)' : ''} - ${new Date(vital.date).toLocaleDateString()}`
+).join('\n') || 'No vital signs on record'}
+
+=== PROCEDURES ===
+Total Procedures: ${state.healthData.procedures.length}
+${state.healthData.procedures.map(proc => 
+  `- ${proc.name} (${proc.type}) - ${new Date(proc.date).toLocaleDateString()}`
+).join('\n') || 'No procedures on record'}
+
+This is a placeholder medical report generated by Fountain Healthcare Platform.
+For official medical records, please contact your healthcare provider.
+    `.trim();
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fountain-medical-report-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    console.log('Medical report downloaded successfully!');
+  };
+
+  // Stats cards data
+  const quickStats = [
+    {
+      title: 'Active Conditions',
+      value: state.healthData.conditions.filter(c => c.status === 'active').length,
+      total: state.healthData.conditions.length,
+      variant: 'primary',
+      trend: '+2 this month'
+    },
+    {
+      title: 'Current Medications',
+      value: state.healthData.medications.filter(m => m.status === 'active').length,
+      total: state.healthData.medications.length,
+      variant: 'success',
+      trend: 'No changes'
+    },
+    {
+      title: 'Recent Lab Results',
+      value: state.healthData.labs.filter(l => {
+        const date = new Date(l.date);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return date >= thirtyDaysAgo;
+      }).length,
+      total: state.healthData.labs.length,
+      variant: 'warning',
+      trend: '3 new results'
+    },
+    {
+      title: 'Unread Alerts',
+      value: state.alerts.unreadCount,
+      total: state.alerts.list.length,
+      variant: 'error',
+      trend: abnormalResults.length > 0 ? 'Needs attention' : 'All normal'
+    }
+  ];
+
+  // Recent activity (not displayed currently but keeping for later)
+  const recentActivity = [
+    ...state.healthData.labs.slice(0, 3).map(lab => ({
+      type: 'lab',
+      title: `Lab Result: ${lab.testName}`,
+      subtitle: `${lab.result} ${lab.unit}`,
+      date: lab.date,
+      status: lab.status,
+      isAbnormal: lab.flagged
+    })),
+    ...state.healthData.medications.slice(0, 2).map(med => ({
+      type: 'medication',
+      title: `Medication: ${med.name}`,
+      subtitle: `${med.dosage} - ${med.frequency}`,
+      date: med.startDate,
+      status: med.status
+    }))
+  ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="content-container">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-neutral-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-neutral-200 rounded-xl"></div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="h-64 bg-neutral-200 rounded-xl"></div>
+              <div className="h-64 bg-neutral-200 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="content-container">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+                Welcome back{state.auth.user?.firstName ? `, ${state.auth.user.firstName}` : ''}
+              </h1>
+              <p className="text-neutral-600">
+                Here's an overview of your health information
+              </p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleDownloadReport}
+              >
+                Download Full Medical Report
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main dashboard content */}
+        <div className="space-y-6">
+          {/* Stats overview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {quickStats.map((stat, index) => (
+              <StatCard
+                key={index}
+                title={stat.title}
+                value={stat.value}
+                subtitle={`of ${stat.total} total`}
+                variant={stat.variant}
+                trend={stat.trend}
+              />
+            ))}
+          </div>
+
+          {/* Warning if any abnormal results */}
+          {abnormalResults.length > 0 && (
+            <Alert
+              variant="warning"
+              title="Abnormal Results Detected"
+              message={`${abnormalResults.length} test results require your attention`}
+              className="border-l-4 border-warning-500"
+              actions={[
+                <Button
+                  key="view"
+                  variant="warning"
+                  size="sm"
+                  onClick={() => console.log('Abnormal results need review')}
+                >
+                  Review Results
+                </Button>
+              ]}
+            />
+          )}
+
+          {/* AI insights section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card 
+              title={
+                <div className="flex items-center space-x-2">
+                  <SparklesIcon className="w-5 h-5 text-primary-600" />
+                  <span>AI Health Report</span>
+                </div>
+              } 
+              className="h-fit"
+              actions={[
+                <Button
+                  key="refresh"
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchAIReport}
+                  disabled={aiReport.loading}
+                >
+                  {aiReport.loading ? 'Analyzing...' : 'Refresh Analysis'}
+                </Button>
+              ]}
+            >
+              <div className="space-y-4">
+                {/* AI calculated health score */}
+                <div className="p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-primary-900">AI Health Score</span>
+                    <div className="flex items-center space-x-1">
+                      {aiReport.summary.trend === 'improving' ? (
+                        <ArrowTrendingUpIcon className="w-4 h-4 text-success-600" />
+                      ) : (
+                        <span className="w-2 h-2 bg-warning-400 rounded-full" />
+                      )}
+                      <span className="text-xs text-primary-700">
+                        {aiReport.summary.trend === 'improving' ? 'Improving' : 'Stable'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-end space-x-2">
+                    <span className="text-3xl font-bold text-primary-900">
+                      {aiReport.summary.healthScore}
+                    </span>
+                    <span className="text-lg text-primary-700 mb-1">/100</span>
+                  </div>
+                  <div className="mt-2 w-full bg-primary-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${aiReport.summary.healthScore}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* AI generated insights */}
+                <div>
+                  <h4 className="text-sm font-semibold text-neutral-900 mb-2 flex items-center">
+                    <LightBulbIcon className="w-4 h-4 mr-1 text-warning-500" />
+                    Key Insights
+                  </h4>
+                  <ul className="space-y-2">
+                    {aiReport.summary.keyInsights.map((insight, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <span className="text-primary-500 mt-1">•</span>
+                        <span className="text-sm text-neutral-700">{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Health risk assessment */}
+                <div>
+                  <h4 className="text-sm font-semibold text-neutral-900 mb-2">Risk Assessment</h4>
+                  <div className="space-y-2">
+                    {aiReport.riskFactors.map((risk) => (
+                      <div key={risk.factor} className="flex items-center justify-between">
+                        <span className="text-sm text-neutral-700">{risk.factor}</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-20 h-2 bg-neutral-200 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full ${
+                                risk.level === 'low' ? 'bg-success-500' :
+                                risk.level === 'moderate' ? 'bg-warning-500' : 'bg-error-500'
+                              }`}
+                              style={{ width: `${risk.score}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-neutral-600">{risk.level}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card 
+              title={
+                <div className="flex items-center space-x-2">
+                  <DocumentTextIcon className="w-5 h-5 text-primary-600" />
+                  <span>AI Recommendations</span>
+                </div>
+              } 
+              className="h-fit"
+            >
+              <div className="space-y-3">
+                {aiReport.recommendations.map((rec) => (
+                  <div
+                    key={rec.id}
+                    className={`p-3 rounded-lg border transition-all hover:shadow-md cursor-pointer ${
+                      rec.priority === 'high' ? 'border-error-200 bg-error-50' :
+                      rec.priority === 'medium' ? 'border-warning-200 bg-warning-50' :
+                      'border-neutral-200 bg-neutral-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <h5 className="text-sm font-semibold text-neutral-900">
+                        {rec.title}
+                      </h5>
+                      <Badge 
+                        variant={
+                          rec.priority === 'high' ? 'error' :
+                          rec.priority === 'medium' ? 'warning' : 'default'
+                        }
+                        size="xs"
+                      >
+                        {rec.priority}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-neutral-700 mb-2">
+                      {rec.description}
+                    </p>
+                    <div className="flex items-center space-x-1 text-xs text-primary-600">
+                      <ArrowTrendingUpIcon className="w-3 h-3" />
+                      <span>{rec.impact}</span>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="mt-4 p-3 bg-info-50 rounded-lg border border-info-200">
+                  <p className="text-xs text-info-800">
+                    <span className="font-semibold">Note:</span> These recommendations are AI-generated based on your health data. 
+                    Always consult with your healthcare provider before making changes to your treatment plan.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  );
+};
+
+export default DashboardPage;
