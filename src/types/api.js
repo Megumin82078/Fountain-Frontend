@@ -56,8 +56,11 @@ export const BatchStatus = {
   FAILED: 'failed'
 };
 
-// API Base URL
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Import dynamic API configuration
+import { API_BASE_URL } from '../config/api';
+
+// Re-export for backward compatibility
+export { API_BASE_URL };
 
 // Request headers
 export const getAuthHeaders = (token) => ({
@@ -72,8 +75,11 @@ export const API_ENDPOINTS = {
   LOGIN: '/auth/login',
   
   // Profile & Dashboard
+  PROFILE_ME: '/profile/me',
   DASHBOARD_ME: '/profile/dashboard/me',
   DASHBOARD_ME_DETAIL: '/profile/dashboard/me/detail',
+  PROFILE_UPLOAD_AVATAR: '/profile/me/upload-avatar',
+  PROFILE_CHANGE_PASSWORD: '/profile/me/change-password',
   
   // Health Data
   MY_HEALTH_DATA: '/profile/me/health-data',
@@ -92,9 +98,30 @@ export const API_ENDPOINTS = {
   MY_DISEASES: '/profile/me/diseases',
   MY_ALERTS: '/profile/me/alerts',
   
+  // Health Data Management
+  HEALTH_DATA_LABS: '/health-data/labs',
+  HEALTH_DATA_LAB: (labId) => `/health-data/labs/${labId}`,
+  HEALTH_DATA_MEDICATIONS: '/health-data/medications',
+  HEALTH_DATA_MEDICATION: (medId) => `/health-data/medications/${medId}`,
+  HEALTH_DATA_CONDITIONS: '/health-data/conditions',
+  HEALTH_DATA_CONDITION: (conditionId) => `/health-data/conditions/${conditionId}`,
+  HEALTH_DATA_PROCEDURES: '/health-data/procedures',
+  HEALTH_DATA_PROCEDURE: (procId) => `/health-data/procedures/${procId}`,
+  HEALTH_DATA_VITALS: '/health-data/vitals',
+  HEALTH_DATA_VITAL: (vitalId) => `/health-data/vitals/${vitalId}`,
+  
   // Request Batches
-  REQUEST_BATCHES: '/request-batches',
   REQUEST_BATCH: (batchId) => `/request-batches/${batchId}`,
+  REQUEST_BATCH_TIMELINE: (batchId) => `/request-batches/${batchId}/timeline`,
+  REQUEST_BATCH_TIMELINE_EVENT: (batchId, eventId) => `/request-batches/${batchId}/timeline/${eventId}`,
+  REQUEST_BATCH_PROVIDERS: (batchId) => `/request-batches/${batchId}/providers`,
+  REQUEST_BATCH_PROVIDER_RESEND: (batchId, providerRequestId) => `/request-batches/${batchId}/providers/${providerRequestId}/resend`,
+  REQUEST_BATCH_PROVIDER_DOCUMENTS: (batchId, providerRequestId) => `/request-batches/${batchId}/providers/${providerRequestId}/documents`,
+  REQUEST_BATCH_DOCUMENTS: (batchId) => `/request-batches/${batchId}/documents`,
+  REQUEST_BATCH_DOCUMENT_PREVIEW: (batchId, documentId) => `/request-batches/${batchId}/documents/${documentId}/preview`,
+  REQUEST_BATCH_CANCEL: (batchId) => `/request-batches/${batchId}/cancel`,
+  REQUEST_BATCH_DOWNLOAD: (batchId) => `/request-batches/${batchId}/download`,
+  REQUEST_BATCH_NOTES: (batchId) => `/request-batches/${batchId}/notes`,
   
   // Providers & Facilities
   PROVIDERS: '/provider',
@@ -103,7 +130,7 @@ export const API_ENDPOINTS = {
   FACILITY: (facilityId) => `/facilities/${facilityId}`,
   ATTACH_PROVIDER: (facilityId, providerId) => `/facilities/${facilityId}/providers/${providerId}`,
   
-  // File Upload
+  // File Upload (Provider Portal Only)
   UPLOAD_LINK: (providerRequestId) => `/provider/upload-link/${providerRequestId}`,
   UPLOAD: (token) => `/provider/upload/${token}`,
   
@@ -111,6 +138,19 @@ export const API_ENDPOINTS = {
   ALERTS: '/alerts',
   ALERT: (alertId) => `/alerts/${alertId}`,
   
+  // Health Facts (Reference Data)
+  DISEASE_FACTS: '/health-data/disease-facts',
+  DISEASE_FACT: (factId) => `/health-data/disease-facts/${factId}`,
+  LAB_FACTS: '/health-data/lab-facts',
+  LAB_FACT: (factId) => `/health-data/lab-facts/${factId}`,
+  MEDICATION_FACTS: '/health-data/medication-facts',
+  MEDICATION_FACT: (factId) => `/health-data/medication-facts/${factId}`,
+  PROCEDURE_FACTS: '/health-data/procedure-facts',
+  PROCEDURE_FACT: (factId) => `/health-data/procedure-facts/${factId}`,
+  VITAL_FACTS: '/health-data/vital-facts',
+  VITAL_FACT: (factId) => `/health-data/vital-facts/${factId}`,
+  
   // Health Check
-  HEALTH_CHECK: '/healthz'
+  HEALTH_CHECK: '/healthz',
+  ADMIN_PING: '/admin/ping'
 };

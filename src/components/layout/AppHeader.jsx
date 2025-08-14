@@ -71,7 +71,7 @@ const AppHeader = ({ onToggleSidebar }) => {
 
           {/* Page title */}
           <div className="flex items-center">
-            <h1 className="text-xl font-semibold text-black" style={{fontFamily: 'var(--font-body)'}}>
+            <h1 className="text-xl font-semibold text-black">
               {getPageTitle()}
             </h1>
           </div>
@@ -84,8 +84,7 @@ const AppHeader = ({ onToggleSidebar }) => {
             <input
               type="text"
               placeholder="Search records..."
-              className="w-64 pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition-colors" 
-              style={{fontFamily: 'var(--font-body)'}}
+              className="w-64 pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition-colors"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +98,6 @@ const AppHeader = ({ onToggleSidebar }) => {
             <button
               onClick={() => navigate(ROUTES.REQUESTS)}
               className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-black border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              style={{fontFamily: 'var(--font-body)'}}
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -130,15 +128,15 @@ const AppHeader = ({ onToggleSidebar }) => {
               className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors"
             >
               <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700" style={{fontFamily: 'var(--font-body)'}}>
+                <span className="text-sm font-medium text-gray-700">
                   {user?.email?.charAt(0).toUpperCase() || 'U'}
                 </span>
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium text-gray-900" style={{fontFamily: 'var(--font-body)'}}>
+                <p className="text-sm font-medium text-gray-900">
                   {user?.name || user?.email?.split('@')[0] || 'User'}
                 </p>
-                <p className="text-xs text-gray-500 capitalize" style={{fontFamily: 'var(--font-body)'}}>
+                <p className="text-xs text-gray-500 capitalize">
                   {user?.role || 'Patient'}
                 </p>
               </div>
@@ -228,7 +226,6 @@ const AppHeader = ({ onToggleSidebar }) => {
               type="text"
               placeholder="Search records..."
               className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition-colors"
-              style={{fontFamily: 'var(--font-body)'}}
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,7 +237,6 @@ const AppHeader = ({ onToggleSidebar }) => {
           <button
             onClick={() => navigate(ROUTES.REQUESTS)}
             className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            style={{fontFamily: 'var(--font-body)'}}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

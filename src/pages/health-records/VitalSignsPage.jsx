@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
+import toast from '../../utils/toast';
 
 import { 
   Button, 
@@ -17,11 +18,17 @@ import {
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
-  HeartIcon,
   CalendarIcon,
   ChartBarIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+
+// Custom Heartbeat icon to match sidebar
+const HeartbeatIcon = ({ className }) => (
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13h2l2-2 2 4 2-2h2m4 0a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+);
 
 const VitalSignsPage = () => {
   const { state, dispatch } = useApp();
@@ -215,13 +222,65 @@ const VitalSignsPage = () => {
     // Validate based on vital type
     if (newVital.type === 'blood_pressure') {
       if (!newVital.systolic || !newVital.diastolic) {
-        console.error('Please enter both systolic and diastolic values');
+        toast.error('Please enter both systolic and diastolic values');
+        return;
+      }
+      
+      const systolic = parseFloat(newVital.systolic);
+      const diastolic = parseFloat(newVital.diastolic);
+      
+      if (isNaN(systolic) || isNaN(diastolic)) {
+        toast.error('Blood pressure values must be numbers');
+        return;
+      }
+      
+      if (systolic < 40 || systolic > 300 || diastolic < 20 || diastolic > 200) {
+        toast.error('Please enter valid blood pressure values');
+        return;
+      }
+      
+      if (systolic <= diastolic) {
+        toast.error('Systolic pressure must be higher than diastolic');
         return;
       }
     } else {
       if (!newVital.value) {
-        console.error('Please enter a value for this vital sign');
+        toast.error('Please enter a value for this vital sign');
         return;
+      }
+      
+      const value = parseFloat(newVital.value);
+      if (isNaN(value)) {
+        toast.error('Value must be a number');
+        return;
+      }
+      
+      // Type-specific validation
+      switch (newVital.type) {
+        case 'heart_rate':
+          if (value < 20 || value > 300) {
+            toast.error('Heart rate must be between 20-300 bpm');
+            return;
+          }
+          break;
+        case 'temperature':
+          if (value < 90 || value > 110) {
+            toast.error('Temperature must be between 90-110°F');
+            return;
+          }
+          break;
+        case 'oxygen_saturation':
+          if (value < 0 || value > 100) {
+            toast.error('Oxygen saturation must be between 0-100%');
+            return;
+          }
+          break;
+        case 'weight':
+          if (value < 0 || value > 1000) {
+            toast.error('Please enter a valid weight');
+            return;
+          }
+          break;
       }
     }
 
@@ -242,7 +301,7 @@ const VitalSignsPage = () => {
     });
 
     setShowAddModal(false);
-    console.log('Vital sign recorded successfully!');
+    toast.success('Vital sign recorded successfully!');
   };
 
   const handleEditVital = (vital) => {
@@ -260,12 +319,12 @@ const VitalSignsPage = () => {
     // Validate based on vital type
     if (editingVital.type === 'blood_pressure') {
       if (!editingVital.systolic || !editingVital.diastolic) {
-        console.error('Please enter both systolic and diastolic values');
+        toast.error('Please enter both systolic and diastolic values');
         return;
       }
     } else {
       if (!editingVital.value) {
-        console.error('Please enter a value for this vital sign');
+        toast.error('Please enter a value for this vital sign');
         return;
       }
     }
@@ -287,7 +346,7 @@ const VitalSignsPage = () => {
 
     setShowEditModal(false);
     setEditingVital(null);
-    console.log('Vital sign updated successfully!');
+    toast.success('Vital sign updated successfully!');
   };
 
   const handleDeleteVital = (vitalId) => {
@@ -297,7 +356,7 @@ const VitalSignsPage = () => {
         payload: vitalId
       });
       setShowDetailsModal(false);
-      console.log('Vital sign deleted successfully!');
+      toast.success('Vital sign deleted successfully!');
     }
   };
 
@@ -410,7 +469,7 @@ const VitalSignsPage = () => {
       key: 'overview',
       label: 'Overview',
       content: (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Latest Readings */}
           <div>
             <h4 className="text-lg font-semibold text-neutral-900 mb-4">Latest Readings</h4>
@@ -540,7 +599,7 @@ const VitalSignsPage = () => {
               </HealthCard>
             ))
           ) : (
-            <Alert variant="info" message="No vital signs match your current filters." />
+            <div className="text-center text-gray-500 py-8">No vital signs match your current filters.</div>
           )}
         </div>
       )
@@ -549,7 +608,7 @@ const VitalSignsPage = () => {
       key: 'by-type',
       label: 'By Type',
       content: (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {Object.keys(groupedByType).length > 0 ? (
             Object.entries(groupedByType).map(([type, vitalsOfType]) => (
               <div key={type}>
@@ -588,7 +647,7 @@ const VitalSignsPage = () => {
               </div>
             ))
           ) : (
-            <Alert variant="info" message="No vital signs match your current filters." />
+            <div className="text-center text-gray-500 py-8">No vital signs match your current filters.</div>
           )}
         </div>
       )
@@ -612,7 +671,7 @@ const VitalSignsPage = () => {
             <Button 
               variant="primary"
               onClick={handleAddVital}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 whitespace-nowrap"
             >
               <PlusIcon className="w-5 h-5" />
               <span>Add Reading</span>
@@ -709,7 +768,7 @@ const VitalSignsPage = () => {
           <Card className="text-center py-12">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <HeartIcon className="w-8 h-8 text-neutral-400" />
+                <HeartbeatIcon className="w-8 h-8 text-neutral-400" />
               </div>
               <h3 className="text-lg font-semibold text-neutral-900 mb-2">
                 {searchQuery || typeFilter !== 'all' || dateFilter !== 'all' 
@@ -739,7 +798,7 @@ const VitalSignsPage = () => {
           title="Add Vital Sign Reading"
           size="lg"
         >
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -870,7 +929,7 @@ const VitalSignsPage = () => {
           size="lg"
         >
           {selectedVital && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-neutral-700">Type</label>
@@ -954,7 +1013,7 @@ const VitalSignsPage = () => {
           size="lg"
         >
           {editingVital && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">

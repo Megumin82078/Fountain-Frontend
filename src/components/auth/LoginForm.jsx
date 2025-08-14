@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useApi';
 import { validateEmail, validatePassword } from '../../utils/helpers';
 import { VALIDATION_RULES } from '../../constants';
+import toast from '../../utils/toast';
 
 const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
   const { login, forgotPassword, loading } = useAuth();
@@ -57,11 +58,14 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
 
     try {
       await login(formData);
+      toast.success('Login successful!');
       onSuccess?.();
     } catch (error) {
+      const errorMessage = error.message || 'Login failed. Please check your credentials.';
       setErrors({
-        submit: error.message || 'Login failed. Please check your credentials.'
+        submit: errorMessage
       });
+      toast.error(errorMessage);
     }
   };
 
@@ -70,11 +74,13 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
     
     if (!forgotPasswordEmail) {
       setErrors({ forgotPassword: 'Please enter your email address' });
+      toast.error('Please enter your email address');
       return;
     }
     
     if (!validateEmail(forgotPasswordEmail)) {
       setErrors({ forgotPassword: 'Please enter a valid email address' });
+      toast.error('Please enter a valid email address');
       return;
     }
 
@@ -82,6 +88,7 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
       const result = await forgotPassword(forgotPasswordEmail);
       setForgotPasswordMessage(result.message);
       setErrors({});
+      toast.success('Password reset email sent!');
       
       // Auto close after 3 seconds
       setTimeout(() => {
@@ -90,36 +97,25 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
         setForgotPasswordEmail('');
       }, 3000);
     } catch (error) {
+      const errorMessage = error.message || 'Failed to send reset email. Please try again.';
       setErrors({
-        forgotPassword: error.message || 'Failed to send reset email. Please try again.'
+        forgotPassword: errorMessage
       });
+      toast.error(errorMessage);
     }
   };
 
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-black mb-2 tracking-tight" style={{fontFamily: 'var(--font-display)'}}>
+        <h2 className="text-3xl font-bold text-black mb-2 tracking-tight">
           Welcome Back
         </h2>
-        <p className="text-gray-700 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+        <p className="text-gray-700 font-medium">
           Sign in to your Fountain account
         </p>
       </div>
 
-      {/* Demo Credentials Info */}
-      <div className="bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4 mb-6 shadow-lg backdrop-blur-sm">
-        <div className="flex items-center">
-          <svg className="w-5 h-5 text-gray-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div className="text-sm">
-            <p className="font-bold text-gray-800" style={{fontFamily: 'var(--font-body)'}}>Demo Credentials:</p>
-            <p className="text-gray-700 font-medium" style={{fontFamily: 'var(--font-body)'}}>Email: demo@fountain.health</p>
-            <p className="text-gray-700 font-medium" style={{fontFamily: 'var(--font-body)'}}>Password: demo123</p>
-          </div>
-        </div>
-      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {errors.submit && (
@@ -134,7 +130,7 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+          <label htmlFor="email" className="block text-sm font-bold text-gray-800 mb-2">
             Email Address
           </label>
           <input
@@ -153,7 +149,7 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+          <label htmlFor="password" className="block text-sm font-bold text-gray-800 mb-2">
             Password
           </label>
           <div className="relative">
@@ -196,13 +192,13 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
               type="checkbox"
               className="h-4 w-4 text-black focus:ring-gray-500 border-gray-300 rounded"
             />
-            <span className="ml-2 text-sm text-gray-700 font-medium" style={{fontFamily: 'var(--font-body)'}}>Remember me</span>
+            <span className="ml-2 text-sm text-gray-700 font-medium">Remember me</span>
           </label>
           
           <button
             type="button"
             onClick={() => setShowForgotPassword(true)}
-            className="text-sm text-black hover:text-gray-700 font-bold transition-all duration-200 hover:scale-105" style={{fontFamily: 'var(--font-body)'}}
+            className="text-sm text-black hover:text-gray-700 font-bold transition-all duration-200 hover:scale-105"
           >
             Forgot password?
           </button>
@@ -224,12 +220,12 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
         </button>
 
         <div className="text-center">
-          <p className="text-sm text-gray-700 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+          <p className="text-sm text-gray-700 font-medium">
             Don't have an account?{' '}
             <button
               type="button"
               onClick={onSwitchToSignup}
-              className="text-black hover:text-gray-700 font-bold underline transition-all duration-200 hover:scale-105" style={{fontFamily: 'var(--font-body)'}}
+              className="text-black hover:text-gray-700 font-bold underline transition-all duration-200 hover:scale-105"
             >
               Create one now
             </button>
@@ -241,7 +237,7 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
       {showForgotPassword && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl">
-            <h3 className="text-2xl font-bold text-black mb-4 text-center" style={{fontFamily: 'var(--font-display)'}}>
+            <h3 className="text-2xl font-bold text-black mb-4 text-center">
               Reset Password
             </h3>
             
@@ -251,17 +247,17 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
                   <svg className="w-6 h-6 text-green-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <p className="text-green-700 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+                  <p className="text-green-700 font-medium">
                     {forgotPasswordMessage}
                   </p>
                 </div>
-                <p className="text-sm text-gray-600 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+                <p className="text-sm text-gray-600 font-medium">
                   This modal will close automatically in a few seconds.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleForgotPassword}>
-                <p className="text-gray-700 mb-4 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+                <p className="text-gray-700 mb-4 font-medium">
                   Enter your email address and we'll send you instructions to reset your password.
                 </p>
                 
@@ -272,7 +268,7 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }) => {
                 )}
                 
                 <div className="mb-6">
-                  <label className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+                  <label className="block text-sm font-bold text-gray-800 mb-2">
                     Email Address
                   </label>
                   <input

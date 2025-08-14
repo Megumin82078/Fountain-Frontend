@@ -1,35 +1,46 @@
 import React, { useState, useRef } from 'react';
 import { AppLayout } from '../../components/layout';
-import { useApp } from '../../context/AppContext';
+import { useApp, ActionTypes } from '../../context/AppContext';
 import { Card } from '../../components/common';
+import toast from '../../utils/toast';
+import apiService from '../../services/api';
 
 const ProfilePage = () => {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const fileInputRef = useRef(null);
-  const [profilePicture, setProfilePicture] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  
+  // Use real user data from state
+  const userData = state.auth.user || {};
+  const userProfile = userData.profile_json || {};
+  
+  // Initialize profile picture from user data
+  const [profilePicture, setProfilePicture] = useState(userData.avatar_url || null);
+  
+  // Initialize profile with real user data or empty values
   const [profile, setProfile] = useState({
     personal: {
-      firstName: 'Demo',
-      lastName: 'User',
-      email: 'demo@fountain.health',
-      phone: '+1 (555) 123-4567',
-      dateOfBirth: '1990-01-01',
-      gender: 'male'
+      firstName: userData.name?.split(' ')[0] || userProfile.name?.split(' ')[0] || '',
+      lastName: userData.name?.split(' ')[1] || userProfile.name?.split(' ')[1] || '',
+      email: userData.email || '',
+      phone: userData.phone || userProfile.phone || '',
+      dateOfBirth: userData.date_of_birth || userProfile.date_of_birth || '',
+      gender: userData.sex || userProfile.sex || ''
     },
     medical: {
-      bloodType: 'O+',
-      height: '5\'10"',
-      weight: '175 lbs',
-      allergies: 'Penicillin, Shellfish',
-      medications: 'Lisinopril 10mg daily',
-      conditions: 'Hypertension'
+      bloodType: userProfile.blood_type || '',
+      height: userProfile.height || '',
+      weight: userProfile.weight || '',
+      allergies: userProfile.allergies || '',
+      medications: userProfile.current_medications || '',
+      conditions: userProfile.medical_conditions || ''
     },
     emergency: {
-      contactName: 'Jane User',
-      contactPhone: '+1 (555) 987-6543',
-      relationship: 'Spouse',
-      physicianName: 'Dr. Smith',
-      physicianPhone: '+1 (555) 456-7890'
+      contactName: userProfile.emergency_contact_name || '',
+      contactPhone: userProfile.emergency_contact_phone || '',
+      relationship: userProfile.emergency_contact_relationship || '',
+      physicianName: userProfile.primary_physician_name || '',
+      physicianPhone: userProfile.primary_physician_phone || ''
     }
   });
 
@@ -41,20 +52,128 @@ const ProfilePage = () => {
     setEditedProfile(profile);
   };
 
-  const handleSave = () => {
-    setProfile(editedProfile);
-    setIsEditing(false);
-    alert('Profile updated successfully!');
+  const handleSave = async () => {
+    // Validation
+    if (!editedProfile.personal.firstName || !editedProfile.personal.lastName) {
+      toast.error('First name and last name are required');
+      return;
+    }
+    
+    if (editedProfile.personal.email && !isValidEmail(editedProfile.personal.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
+    if (editedProfile.personal.phone && !isValidPhone(editedProfile.personal.phone)) {
+      toast.error('Please enter a valid phone number');
+      return;
+    }
+    
+    if (editedProfile.medical.height && isNaN(editedProfile.medical.height)) {
+      toast.error('Height must be a number');
+      return;
+    }
+    
+    if (editedProfile.medical.weight && isNaN(editedProfile.medical.weight)) {
+      toast.error('Weight must be a number');
+      return;
+    }
+    
+    try {
+      // Prepare profile data for API - only email and profile_json are accepted
+      const profileData = {
+        email: editedProfile.personal.email,
+        profile_json: {
+          name: `${editedProfile.personal.firstName} ${editedProfile.personal.lastName}`.trim(),
+          phone: editedProfile.personal.phone,
+          date_of_birth: editedProfile.personal.dateOfBirth,
+          sex: editedProfile.personal.gender,
+          blood_type: editedProfile.medical.bloodType,
+          height: editedProfile.medical.height,
+          weight: editedProfile.medical.weight,
+          allergies: editedProfile.medical.allergies,
+          current_medications: editedProfile.medical.medications,
+          medical_conditions: editedProfile.medical.conditions,
+          emergency_contact_name: editedProfile.emergency.contactName,
+          emergency_contact_phone: editedProfile.emergency.contactPhone,
+          emergency_contact_relationship: editedProfile.emergency.relationship,
+          primary_physician_name: editedProfile.emergency.physicianName,
+          primary_physician_phone: editedProfile.emergency.physicianPhone
+        }
+      };
+      
+      // Call API to save profile
+      const updatedUser = await apiService.updateProfile(profileData);
+      
+      // Update local state
+      setProfile(editedProfile);
+      setIsEditing(false);
+      
+      // Update global user state
+      dispatch({
+        type: ActionTypes.SET_USER,
+        payload: updatedUser
+      });
+      
+      // Show success notification
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      // Show error notification
+      toast.error(error.message || 'Failed to update profile. Please try again.');
+    }
   };
 
   const handleProfilePictureChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+      setUploadedFile(file); // Store the file for upload
       const reader = new FileReader();
       reader.onload = (e) => {
         setProfilePicture(e.target.result);
       };
       reader.readAsDataURL(file);
+      // Show that picture needs to be saved
+      toast.info('Click "Save Picture" to upload your new profile photo');
+    }
+  };
+
+  const handleSavePicture = async () => {
+    if (!uploadedFile) {
+      toast.error('Please select a picture first');
+      return;
+    }
+
+    // Check file size (5MB limit)
+    if (uploadedFile.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(uploadedFile.type)) {
+      toast.error('Please upload a JPG, PNG, or GIF file');
+      return;
+    }
+
+    try {
+      const response = await apiService.uploadAvatar(uploadedFile);
+      toast.success('Profile picture uploaded successfully!');
+      setUploadedFile(null); // Clear the pending upload
+      
+      // Update user avatar URL if returned
+      if (response.avatar_url) {
+        setProfilePicture(response.avatar_url);
+        dispatch({
+          type: ActionTypes.UPDATE_USER_AVATAR,
+          payload: response.avatar_url
+        });
+      }
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to upload picture. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -64,9 +183,22 @@ const ProfilePage = () => {
 
   const handleRemovePhoto = () => {
     setProfilePicture(null);
+    setUploadedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+  
+  // Validation helpers
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+  
+  const isValidPhone = (phone) => {
+    // Remove all non-digits and check if it's 10 digits
+    const digitsOnly = phone.replace(/\D/g, '');
+    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
   };
 
   const handleCancel = () => {
@@ -91,14 +223,13 @@ const ProfilePage = () => {
       if (type === 'select') {
         return (
           <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 mb-1" style={{fontFamily: 'var(--font-body)'}}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               {label}
             </label>
             <select
               value={value}
               onChange={(e) => handleInputChange(section, field, e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-              style={{fontFamily: 'var(--font-body)'}}
             >
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -119,7 +250,9 @@ const ProfilePage = () => {
             value={value}
             onChange={(e) => handleInputChange(section, field, e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-            style={{fontFamily: 'var(--font-body)'}}
+            {...(field === 'phone' && { pattern: '[0-9]{3}-[0-9]{3}-[0-9]{4}', placeholder: '123-456-7890' })}
+            {...(field === 'height' && { type: 'number', min: '0', max: '300', placeholder: 'Height in cm' })}
+            {...(field === 'weight' && { type: 'number', min: '0', max: '500', placeholder: 'Weight in kg' })}
           />
         </div>
       );
@@ -127,10 +260,10 @@ const ProfilePage = () => {
 
     return (
       <div key={field} className="flex justify-between py-2">
-        <span className="text-sm font-medium text-gray-600" style={{fontFamily: 'var(--font-body)'}}>
+        <span className="text-sm font-medium text-gray-600">
           {label}:
         </span>
-        <span className="text-sm text-gray-900" style={{fontFamily: 'var(--font-body)'}}>
+        <span className="text-sm text-gray-900">
           {value || 'Not specified'}
         </span>
       </div>
@@ -142,10 +275,10 @@ const ProfilePage = () => {
       <div className="content-container">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-black mb-2" style={{fontFamily: 'var(--font-display)'}}>
+            <h1 className="text-3xl font-bold text-black mb-2">
               Profile
             </h1>
-            <p className="text-gray-600 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+            <p className="text-gray-600 font-medium">
               Manage your personal and medical information
             </p>
           </div>
@@ -156,14 +289,12 @@ const ProfilePage = () => {
                 <button
                   onClick={handleCancel}
                   className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  style={{fontFamily: 'var(--font-body)'}}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
-                  style={{fontFamily: 'var(--font-body)'}}
                 >
                   Save Changes
                 </button>
@@ -172,7 +303,6 @@ const ProfilePage = () => {
               <button
                 onClick={handleEdit}
                 className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                style={{fontFamily: 'var(--font-body)'}}
               >
                 Edit Profile
               </button>
@@ -193,7 +323,7 @@ const ProfilePage = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-3xl font-bold text-gray-600" style={{fontFamily: 'var(--font-body)'}}>
+                    <span className="text-3xl font-bold text-gray-600">
                       {profile.personal.firstName?.charAt(0)}{profile.personal.lastName?.charAt(0)}
                     </span>
                   )}
@@ -221,22 +351,28 @@ const ProfilePage = () => {
                 <button
                   onClick={handleUploadClick}
                   className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  style={{fontFamily: 'var(--font-body)'}}
                 >
-                  Upload Photo
+                  Choose Photo
                 </button>
+                {uploadedFile && (
+                  <button
+                    onClick={handleSavePicture}
+                    className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    Save Picture
+                  </button>
+                )}
                 {profilePicture && (
                   <button
                     onClick={handleRemovePhoto}
                     className="px-4 py-2 text-sm font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
-                    style={{fontFamily: 'var(--font-body)'}}
                   >
                     Remove Photo
                   </button>
                 )}
               </div>
               
-              <p className="text-xs text-gray-500" style={{fontFamily: 'var(--font-body)'}}>
+              <p className="text-xs text-gray-500">
                 JPG, PNG or GIF. Max size 5MB.
               </p>
             </div>

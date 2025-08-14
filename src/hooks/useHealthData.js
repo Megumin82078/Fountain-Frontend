@@ -12,7 +12,7 @@ export const useHealthData = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Get all health data from backend
+  // Get all health data from backend - optimized to use consolidated endpoint
   const fetchAllHealthData = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     else setRefreshing(true);
@@ -20,44 +20,89 @@ export const useHealthData = () => {
     dispatch({ type: ActionTypes.SET_HEALTH_DATA_LOADING, payload: true });
     
     try {
-      // Get everything at once for speed
-      const [
-        conditions,
-        medications,
-        labs,
-        vitals,
-        procedures,
-        diseases
-      ] = await Promise.all([
-        apiService.getConditions(),
-        apiService.getMedications(),
-        apiService.getLabs(),
-        apiService.getVitals(),
-        apiService.getProcedures(),
-        apiService.getDiseases()
-      ]);
-
-      const healthData = {
-        conditions: conditions || [],
-        medications: medications || [],
-        labs: labs || [],
-        vitals: vitals || [],
-        procedures: procedures || [],
-        diseases: diseases || []
-      };
-
-      dispatch({
-        type: ActionTypes.SET_HEALTH_DATA,
-        payload: healthData
-      });
-
-      return healthData;
+      // First try the consolidated endpoint for better performance
+      try {
+        console.log('🏥 Attempting to fetch health data from consolidated endpoint...');
+        const consolidatedData = await apiService.getHealthData();
+        
+        // Transform the response to match our state structure
+        const healthData = {
+          conditions: consolidatedData.conditions || [],
+          medications: consolidatedData.medications || [],
+          labs: consolidatedData.lab_results || consolidatedData.labs || [],
+          vitals: consolidatedData.vital_signs || consolidatedData.vitals || [],
+          procedures: consolidatedData.procedures || [],
+          diseases: consolidatedData.diseases || consolidatedData.health_entities || []
+        };
+        
+        dispatch({
+          type: ActionTypes.SET_HEALTH_DATA,
+          payload: healthData
+        });
+        
+        console.log('✅ Successfully fetched health data using consolidated endpoint');
+        return healthData;
+        
+      } catch (consolidatedError) {
+        console.warn('⚠️ Consolidated endpoint failed, falling back to individual calls:', consolidatedError.message);
+        
+        // Fallback to individual calls using Promise.allSettled for better error handling
+        const [
+          conditions,
+          medications,
+          labs,
+          vitals,
+          procedures,
+          diseases
+        ] = await Promise.allSettled([
+          apiService.getConditions(),
+          apiService.getMedications(),
+          apiService.getLabs(),
+          apiService.getVitals(),
+          apiService.getProcedures(),
+          apiService.getDiseases()
+        ]);
+        
+        // Handle settled promises - extract successful results
+        const healthData = {
+          conditions: conditions.status === 'fulfilled' ? conditions.value : [],
+          medications: medications.status === 'fulfilled' ? medications.value : [],
+          labs: labs.status === 'fulfilled' ? labs.value : [],
+          vitals: vitals.status === 'fulfilled' ? vitals.value : [],
+          procedures: procedures.status === 'fulfilled' ? procedures.value : [],
+          diseases: diseases.status === 'fulfilled' ? diseases.value : []
+        };
+        
+        // Log which calls failed for debugging
+        const failedCalls = [];
+        if (conditions.status === 'rejected') failedCalls.push('conditions');
+        if (medications.status === 'rejected') failedCalls.push('medications');
+        if (labs.status === 'rejected') failedCalls.push('labs');
+        if (vitals.status === 'rejected') failedCalls.push('vitals');
+        if (procedures.status === 'rejected') failedCalls.push('procedures');
+        if (diseases.status === 'rejected') failedCalls.push('diseases');
+        
+        if (failedCalls.length > 0) {
+          console.error('❌ Some health data calls failed:', failedCalls);
+          if (failedCalls.length < 6) {
+            showError(`Failed to fetch: ${failedCalls.join(', ')}`);
+          }
+        }
+        
+        dispatch({
+          type: ActionTypes.SET_HEALTH_DATA,
+          payload: healthData
+        });
+        
+        console.log('✅ Fetched health data using individual endpoints');
+        return healthData;
+      }
     } catch (error) {
-      console.error('Error fetching health data:', error);
-      showError('Failed to fetch health data. Using offline data.');
+      console.error('❌ Critical error fetching health data:', error);
+      showError('Failed to fetch health data. Please check your connection.');
       dispatch({ type: ActionTypes.SET_HEALTH_DATA_LOADING, payload: false });
       
-      // Give empty data if something goes wrong
+      // Return empty data structure
       const emptyHealthData = {
         conditions: [],
         medications: [],

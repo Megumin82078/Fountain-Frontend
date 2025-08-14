@@ -1,14 +1,24 @@
 import apiService from './api';
+import ProductionRequestService from './requestService.production';
 
-/**
- * Request Service - Backend-ready API service for managing medical records requests
- * 
- * This service provides a comprehensive interface for handling all request-related
- * operations. It's designed to work with a RESTful backend API and includes
- * proper error handling, validation, and data transformation.
- */
+// Check if we should use production service with real API calls
+const USE_PRODUCTION_API = import.meta.env.VITE_USE_PRODUCTION_API !== 'false';
 
-class RequestService {
+// Select the appropriate service implementation
+let RequestServiceImplementation;
+if (USE_PRODUCTION_API) {
+  // Use production service with real API + fallback
+  RequestServiceImplementation = ProductionRequestService;
+} else {
+  // Use mock service for development
+  
+  /**
+   * Request Service - Mock implementation for development
+   * 
+   * This service provides mock data for development and testing.
+   * In production, the requestService.production.js is used instead.
+   */
+  class RequestService {
   /**
    * Get all requests for the current user
    * @param {Object} filters - Filter options
@@ -503,9 +513,16 @@ class RequestService {
   }
 }
 
+  // Set the implementation to the mock class
+  RequestServiceImplementation = RequestService;
+}
+
 // Export singleton instance
-const requestService = new RequestService();
+const requestService = USE_PRODUCTION_API 
+  ? RequestServiceImplementation 
+  : new RequestServiceImplementation();
+
 export default requestService;
 
 // Export the class for testing purposes
-export { RequestService };
+export { RequestServiceImplementation as RequestService };

@@ -56,7 +56,7 @@ const AppSidebar = ({ isOpen, onClose }) => {
           href: ROUTES.LABS,
           icon: (
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 7.172V5L8 4z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           )
         },
@@ -65,7 +65,7 @@ const AppSidebar = ({ isOpen, onClose }) => {
           href: ROUTES.VITALS,
           icon: (
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13h2l2-2 2 4 2-2h2m4 0a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           )
         },
@@ -103,7 +103,7 @@ const AppSidebar = ({ isOpen, onClose }) => {
       href: ROUTES.ALERTS,
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM12 17.5a6.5 6.5 0 110-13 6.5 6.5 0 010 13z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
       ),
       badge: unreadCount > 0 ? unreadCount : null
@@ -147,7 +147,7 @@ const AppSidebar = ({ isOpen, onClose }) => {
             onClick={() => navigate('/')}
             className="flex items-center space-x-3 hover:opacity-75 transition-opacity"
           >
-            <span className="text-xl font-bold text-black" style={{fontFamily: 'var(--font-display)'}}>Fountain</span>
+            <span className="text-xl font-bold text-black logo-text">Fountain</span>
           </button>
           
           {/* Close button for mobile */}

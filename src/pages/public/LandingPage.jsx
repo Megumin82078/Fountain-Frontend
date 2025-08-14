@@ -55,7 +55,7 @@ const LandingPage = () => {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-black tracking-tight" style={{fontFamily: 'var(--font-display)'}}>Fountain</h1>
+              <h1 className="text-2xl font-bold text-black tracking-tight logo-text">Fountain</h1>
             </div>
 
             {/* Desktop Navigation */}
@@ -404,7 +404,7 @@ const LandingPage = () => {
         <div className="container-royal relative z-10">
           <div className="text-center space-y-10">
             <div className="space-y-4">
-              <h3 className="text-headline text-white" style={{fontFamily: 'var(--font-display)'}}>Fountain</h3>
+              <h3 className="text-headline text-white logo-text">Fountain</h3>
               <p className="text-body text-gray-400 max-w-md mx-auto" style={{fontFamily: 'var(--font-display)'}}>
                 Your complete medical history, organized and understood.
               </p>

@@ -245,7 +245,7 @@ const StateDemo = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-neutral-700">Theme:</span>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 whitespace-nowrap">
                     <Badge variant={settings.theme === 'light' ? 'success' : 'default'}>
                       {settings.theme}
                     </Badge>
@@ -257,7 +257,7 @@ const StateDemo = () => {
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-neutral-700">Sidebar Collapsed:</span>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 whitespace-nowrap">
                     <Badge variant={settings.sidebarCollapsed ? 'warning' : 'success'}>
                       {settings.sidebarCollapsed ? 'Yes' : 'No'}
                     </Badge>

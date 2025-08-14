@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import { useHealthData } from '../../hooks/useHealthData';
-import { useDashboard, useAlerts } from '../../hooks/useApi';
+import { useDashboard } from '../../hooks/useApi';
 import apiService from '../../services/api';
-import toast from '../../utils/toast';
 import { 
   Button, 
   Card, 
@@ -27,7 +26,6 @@ const DashboardPage = () => {
   const { state, dispatch } = useApp();
   const { getHealthSummary, getAbnormalResults, fetchAllHealthData } = useHealthData();
   const { fetchDashboard, loading: dashboardLoading } = useDashboard();
-  const { fetchAlerts } = useAlerts();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
   const [dashboardDetail, setDashboardDetail] = useState(null);
@@ -50,13 +48,10 @@ const DashboardPage = () => {
       
       try {
         // Fetch all data in parallel
-        const promises = [
+        const [healthData, dashboardResult] = await Promise.all([
           fetchAllHealthData(true),
-          fetchAlerts(),
           fetchDashboard()
-        ];
-
-        const [healthData, alertsData, dashboardResult] = await Promise.all(promises);
+        ]);
 
         if (dashboardResult) {
           setDashboardData(dashboardResult.dashboard);
@@ -75,11 +70,11 @@ const DashboardPage = () => {
             }));
           }
         } catch (adviceError) {
-          // Silently handle - health advice is optional
+          console.log('Health advice not available yet');
         }
 
       } catch (err) {
-        toast.error('Failed to load dashboard data');
+        console.error('Failed to load dashboard:', err);
         setError(err.message || 'Failed to load dashboard data');
       } finally {
         setLoading(false);
@@ -188,9 +183,9 @@ For official medical records, please contact your healthcare provider.
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      toast.success('Medical report downloaded successfully!');
+      console.log('Medical report downloaded successfully!');
     } catch (error) {
-      toast.error('Failed to generate report. Please try again.');
+      console.error('Failed to generate report:', error);
     }
   };
 

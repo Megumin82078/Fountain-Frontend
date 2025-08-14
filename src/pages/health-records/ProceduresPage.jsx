@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
+import toast from '../../utils/toast';
 
 import { 
   Button, 
@@ -192,7 +193,7 @@ const ProceduresPage = () => {
 
   const handleSaveProcedure = () => {
     if (!newProcedure.name.trim()) {
-      console.error('Please enter a procedure name');
+      toast.error('Please enter a procedure name');
       return;
     }
 
@@ -208,7 +209,7 @@ const ProceduresPage = () => {
     });
 
     setShowAddModal(false);
-    console.log('Procedure added successfully!');
+    toast.success('Procedure added successfully!');
   };
 
   const handleEditProcedure = (procedure) => {
@@ -224,7 +225,7 @@ const ProceduresPage = () => {
 
   const handleUpdateProcedure = () => {
     if (!editingProcedure.name.trim()) {
-      console.error('Please enter a procedure name');
+      toast.error('Please enter a procedure name');
       return;
     }
 
@@ -240,7 +241,7 @@ const ProceduresPage = () => {
 
     setShowEditModal(false);
     setEditingProcedure(null);
-    console.log('Procedure updated successfully!');
+    toast.success('Procedure updated successfully!');
   };
 
   const handleDeleteProcedure = (procedureId) => {
@@ -250,7 +251,7 @@ const ProceduresPage = () => {
         payload: procedureId
       });
       setShowDetailsModal(false);
-      console.log('Procedure deleted successfully!');
+      toast.success('Procedure deleted successfully!');
     }
   };
 
@@ -275,11 +276,11 @@ const ProceduresPage = () => {
     
     const validFiles = files.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        console.error(`${file.name} is not a supported file type. Please upload PDF, JPG, or PNG files.`);
+        toast.error(`${file.name} is not a supported file type. Please upload PDF, JPG, or PNG files.`);
         return false;
       }
       if (file.size > maxSize) {
-        console.error(`${file.name} is too large. Please upload files smaller than 10MB.`);
+        toast.error(`${file.name} is too large. Please upload files smaller than 10MB.`);
         return false;
       }
       return true;
@@ -317,11 +318,11 @@ const ProceduresPage = () => {
     
     const validFiles = files.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        console.error(`${file.name} is not a supported file type. Please upload PDF, JPG, or PNG files.`);
+        toast.error(`${file.name} is not a supported file type. Please upload PDF, JPG, or PNG files.`);
         return false;
       }
       if (file.size > maxSize) {
-        console.error(`${file.name} is too large. Please upload files smaller than 10MB.`);
+        toast.error(`${file.name} is too large. Please upload files smaller than 10MB.`);
         return false;
       }
       return true;
@@ -460,7 +461,7 @@ const ProceduresPage = () => {
               </HealthCard>
             ))
           ) : (
-            <Alert variant="info" message="No procedures match your current filters." />
+            <div className="text-center text-gray-500 py-8">No procedures match your current filters.</div>
           )}
         </div>
       )
@@ -469,7 +470,7 @@ const ProceduresPage = () => {
       key: 'by-status',
       label: 'By Status',
       content: (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Scheduled Procedures */}
           {groupedProcedures.scheduled.length > 0 && (
             <div>
@@ -590,7 +591,7 @@ const ProceduresPage = () => {
       key: 'by-type',
       label: 'By Type',
       content: (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {Object.keys(groupedByType).length > 0 ? (
             Object.entries(groupedByType).map(([type, proceduresOfType]) => (
               <div key={type}>
@@ -633,7 +634,7 @@ const ProceduresPage = () => {
               </div>
             ))
           ) : (
-            <Alert variant="info" message="No procedures match your current filters." />
+            <div className="text-center text-gray-500 py-8">No procedures match your current filters.</div>
           )}
         </div>
       )
@@ -657,7 +658,7 @@ const ProceduresPage = () => {
             <Button 
               variant="primary"
               onClick={handleAddProcedure}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 whitespace-nowrap"
             >
               <PlusIcon className="w-5 h-5" />
               <span>Add Procedure</span>
@@ -665,27 +666,6 @@ const ProceduresPage = () => {
           </div>
         </div>
 
-        {/* Upcoming Procedures Alert */}
-        {upcomingProcedures.length > 0 && (
-          <Alert
-            variant="info"
-            title="Upcoming Procedures"
-            message={`You have ${upcomingProcedures.length} procedure${upcomingProcedures.length > 1 ? 's' : ''} scheduled`}
-            className="mb-6"
-            actions={[
-              <Button
-                key="view"
-                variant="info"
-                size="sm"
-                onClick={() => {
-                  setStatusFilter('scheduled');
-                }}
-              >
-                View Scheduled
-              </Button>
-            ]}
-          />
-        )}
 
         {/* Search and Filters */}
         <Card className="mb-6">
@@ -795,7 +775,7 @@ const ProceduresPage = () => {
           title="Add Medical Procedure"
           size="xl"
         >
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1020,7 +1000,7 @@ const ProceduresPage = () => {
           size="lg"
         >
           {selectedProcedure && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-neutral-700">Status</label>
@@ -1167,7 +1147,7 @@ const ProceduresPage = () => {
           size="xl"
         >
           {editingProcedure && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">

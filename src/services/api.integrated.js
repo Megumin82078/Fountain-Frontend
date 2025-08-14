@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL, API_ENDPOINTS } from '../types/api';
+import { API_BASE_URL, API_ENDPOINTS, getAuthHeaders } from '../types/api';
 import { getErrorMessage } from '../utils/helpers';
 import { STORAGE_KEYS, API_CONFIG } from '../constants';
 
@@ -66,45 +66,35 @@ apiClient.interceptors.response.use(
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
-      // Clear bad token and user data
       removeStoredToken();
-      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-      
-      // Redirect to login page
       window.location.href = '/login';
-      
       return Promise.reject(error);
     }
 
     // Handle 422 Validation Error
     if (error.response?.status === 422) {
       const validationErrors = error.response.data.detail;
-      if (Array.isArray(validationErrors)) {
-        error.message = validationErrors.map(err => err.msg || err.message).join(', ');
-      } else if (typeof validationErrors === 'string') {
-        error.message = validationErrors;
-      } else {
-        error.message = 'Validation error occurred';
-      }
+      const errorMessage = Array.isArray(validationErrors)
+        ? validationErrors.map(err => err.msg || err.message).join(', ')
+        : 'Validation error occurred';
+      error.message = errorMessage;
     }
 
     // Handle 403 Forbidden
     if (error.response?.status === 403) {
-      error.message = 'Access forbidden - insufficient permissions';
+      console.warn('Access forbidden - insufficient permissions');
     }
 
     // Handle network errors
     if (!error.response) {
-      error.message = `Cannot connect to backend server at ${API_BASE_URL}. This may be due to CORS issues or the server being down.`;
-      console.error(`Backend connection failed - is the server running at ${API_BASE_URL}?`);
+      error.message = 'Network error - please check your connection';
     }
 
     return Promise.reject(error);
   }
 );
 
-// Main API service - ALL REAL BACKEND CALLS
+// Main API service with backend integration
 class ApiService {
   // ==================== Authentication ====================
   async signUp(userData) {
@@ -117,121 +107,44 @@ class ApiService {
         profile_json: {
           name: userData.name,
           phone: userData.phone,
-          date_of_birth: userData.dateOfBirth,
-          sex: userData.sex,
-          age: userData.age,
-          address: userData.address
+          date_of_birth: userData.dateOfBirth
         }
       });
       
-      const { access_token, token_type } = response.data;
+      const { access_token } = response.data;
       setStoredToken(access_token);
       
-      // Backend doesn't return user data on signup, need to fetch profile
-      try {
-        const userProfile = await this.getProfile();
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userProfile));
-        
-        return {
-          access_token,
-          token_type,
-          user: userProfile
-        };
-      } catch (profileError) {
-        // If profile fetch fails, return basic data
-        return {
-          access_token,
-          token_type,
-          user: {
-            email: userData.email,
-            name: userData.name
-          }
-        };
-      }
+      // Get user profile after signup
+      const userProfile = await this.getProfile();
+      
+      return {
+        access_token,
+        user: userProfile
+      };
     } catch (error) {
-      throw new Error(error.response?.data?.detail || error.message || 'Registration failed');
+      throw new Error(error.response?.data?.detail || getErrorMessage(error));
     }
   }
 
   async login(credentials) {
     try {
-      console.log('🔐 ApiService: Starting login with credentials:', { email: credentials.email });
-      
       const response = await apiClient.post(API_ENDPOINTS.LOGIN, {
         email: credentials.email,
         password: credentials.password
       });
       
-      console.log('✅ ApiService: Login response received:', response.data);
-      
-      const { access_token, token_type } = response.data;
+      const { access_token } = response.data;
       setStoredToken(access_token);
       
-      console.log('🔑 ApiService: Token stored in localStorage');
-      
-      // Enhanced profile fetching with retry logic
-      let userProfile;
-      let profileFetchSuccess = false;
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      while (!profileFetchSuccess && retryCount < maxRetries) {
-        try {
-          userProfile = await this.getProfile();
-          profileFetchSuccess = true;
-          
-          // Ensure required fields exist
-          if (!userProfile.role) userProfile.role = 'patient';
-          if (!userProfile.type) userProfile.type = 'individual';
-          if (!userProfile.name && userProfile.profile_json?.name) {
-            userProfile.name = userProfile.profile_json.name;
-          } else if (!userProfile.name) {
-            userProfile.name = userProfile.email?.split('@')[0] || 'User';
-          }
-          
-          localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userProfile));
-          console.log('✅ ApiService: User profile fetched and stored:', userProfile);
-          
-        } catch (profileError) {
-          retryCount++;
-          console.error(`❌ ApiService: Profile fetch attempt ${retryCount} failed:`, profileError);
-          
-          if (retryCount < maxRetries) {
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          } else {
-            // Create a complete fallback user object
-            userProfile = {
-              email: credentials.email,
-              name: credentials.email.split('@')[0],
-              role: 'patient',
-              type: 'individual',
-              id: `temp_${Date.now()}`,
-              profile_json: {
-                name: credentials.email.split('@')[0],
-                preferences: {},
-                settings: {}
-              }
-            };
-            
-            // Store fallback data
-            localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userProfile));
-            console.warn('⚠️ ApiService: Using fallback user profile');
-            
-            // Schedule background profile fetch
-            this._scheduleProfileRefetch();
-          }
-        }
-      }
+      // Get user profile after login
+      const userProfile = await this.getProfile();
+      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userProfile));
       
       return {
         access_token,
-        token_type,
-        user: userProfile,
-        profileFetchSuccess
+        user: userProfile
       };
     } catch (error) {
-      console.error('❌ ApiService: Login failed:', error);
       throw new Error(error.response?.data?.detail || 'Invalid email or password');
     }
   }
@@ -242,43 +155,9 @@ class ApiService {
     // Note: Backend doesn't have logout endpoint, token will expire
   }
 
-  // Background profile refetch for when initial fetch fails
-  _scheduleProfileRefetch() {
-    setTimeout(async () => {
-      try {
-        const token = getStoredToken();
-        if (!token) return; // User logged out
-        
-        const userProfile = await this.getProfile();
-        if (userProfile && userProfile.email) {
-          // Ensure required fields
-          if (!userProfile.role) userProfile.role = 'patient';
-          if (!userProfile.type) userProfile.type = 'individual';
-          if (!userProfile.name && userProfile.profile_json?.name) {
-            userProfile.name = userProfile.profile_json.name;
-          } else if (!userProfile.name) {
-            userProfile.name = userProfile.email?.split('@')[0] || 'User';
-          }
-          
-          localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userProfile));
-          
-          // Dispatch custom event to notify UI
-          window.dispatchEvent(new CustomEvent('profileUpdated', { 
-            detail: userProfile 
-          }));
-          
-          console.log('✅ Background profile fetch successful');
-        }
-      } catch (error) {
-        console.error('Background profile fetch failed:', error);
-      }
-    }, 5000); // Try again after 5 seconds
-  }
-
   async forgotPassword(email) {
-    // TODO: Backend doesn't have password reset endpoint yet
-    console.warn('Password reset endpoint not implemented in backend');
-    throw new Error('Password reset functionality coming soon');
+    // TODO: Implement when backend provides password reset endpoint
+    throw new Error('Password reset not yet implemented');
   }
 
   // ==================== Profile & Dashboard ====================
@@ -293,21 +172,15 @@ class ApiService {
 
   async updateProfile(profileData) {
     try {
-      console.log('📤 Updating profile with data:', profileData);
       const response = await apiClient.put(API_ENDPOINTS.PROFILE_ME, profileData);
-      console.log('✅ Profile update response:', response.data);
-      // Update stored user data
-      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.data));
       return response.data;
     } catch (error) {
-      console.error('❌ Profile update error:', error.response?.data);
       throw new Error(error.response?.data?.detail || 'Failed to update profile');
     }
   }
 
   async uploadAvatar(file) {
     try {
-      console.log('📤 Uploading avatar, file:', file.name, 'size:', file.size, 'type:', file.type);
       const formData = new FormData();
       formData.append('file', file);
       
@@ -316,19 +189,17 @@ class ApiService {
           'Content-Type': 'multipart/form-data'
         }
       });
-      console.log('✅ Avatar upload response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Avatar upload error:', error.response?.data);
       throw new Error(error.response?.data?.detail || 'Failed to upload avatar');
     }
   }
 
-  async changePassword(currentPassword, newPassword) {
+  async changePassword(passwordData) {
     try {
       const response = await apiClient.put(API_ENDPOINTS.PROFILE_CHANGE_PASSWORD, {
-        current_password: currentPassword,
-        new_password: newPassword
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword
       });
       return response.data;
     } catch (error) {
@@ -439,37 +310,10 @@ class ApiService {
 
   async getDiseases() {
     try {
-      console.log('📤 Fetching diseases from:', API_ENDPOINTS.MY_DISEASES);
       const response = await apiClient.get(API_ENDPOINTS.MY_DISEASES);
-      console.log('✅ Diseases response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Failed to fetch diseases:', error.response?.data);
       throw new Error(error.response?.data?.detail || 'Failed to fetch diseases');
-    }
-  }
-  
-  // Get all available disease facts (for condition creation)
-  async getDiseaseFacts() {
-    try {
-      console.log('📤 Fetching disease facts');
-      // Since there's no GET endpoint for disease facts, we'll use a mock list
-      // In a real app, this should come from the backend
-      return [
-        { id: 'disease-1', name: 'Type 2 Diabetes', code: 'E11.9' },
-        { id: 'disease-2', name: 'Hypertension', code: 'I10' },
-        { id: 'disease-3', name: 'Asthma', code: 'J45.909' },
-        { id: 'disease-4', name: 'Migraine', code: 'G43.909' },
-        { id: 'disease-5', name: 'Depression', code: 'F32.9' },
-        { id: 'disease-6', name: 'Anxiety Disorder', code: 'F41.9' },
-        { id: 'disease-7', name: 'Hypothyroidism', code: 'E03.9' },
-        { id: 'disease-8', name: 'GERD', code: 'K21.9' },
-        { id: 'disease-9', name: 'Chronic Kidney Disease', code: 'N18.9' },
-        { id: 'disease-10', name: 'COPD', code: 'J44.9' }
-      ];
-    } catch (error) {
-      console.error('❌ Failed to fetch disease facts:', error);
-      throw new Error('Failed to fetch disease facts');
     }
   }
 
@@ -646,15 +490,13 @@ class ApiService {
   }
 
   // ==================== Provider Management ====================
-  async getProviders(name = null) {
+  async getProviders(searchParams = {}) {
     try {
       const params = new URLSearchParams();
-      if (name) params.append('name', name);
+      if (searchParams.name) params.append('name', searchParams.name);
+      if (searchParams.specialty) params.append('specialty', searchParams.specialty);
       
-      const queryString = params.toString();
-      const url = queryString ? `${API_ENDPOINTS.PROVIDERS}?${queryString}` : API_ENDPOINTS.PROVIDERS;
-      
-      const response = await apiClient.get(url);
+      const response = await apiClient.get(`${API_ENDPOINTS.PROVIDERS}?${params.toString()}`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.detail || 'Failed to fetch providers');
@@ -689,28 +531,28 @@ class ApiService {
   }
 
   // ==================== Facilities ====================
-  async getFacilities(name = null) {
+  async getFacilities(searchParams = {}) {
     try {
       const params = new URLSearchParams();
-      if (name) params.append('name', name);
+      if (searchParams.name) params.append('name', searchParams.name);
       
-      const queryString = params.toString();
-      const url = queryString ? `${API_ENDPOINTS.FACILITIES}?${queryString}` : API_ENDPOINTS.FACILITIES;
-      
-      const response = await apiClient.get(url);
+      const response = await apiClient.get(`${API_ENDPOINTS.FACILITIES}?${params.toString()}`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.detail || 'Failed to fetch facilities');
     }
   }
 
-  // ==================== Request Batches ====================
-  async getRequestBatches() {
-    // TODO: Backend doesn't have GET /request-batches endpoint yet
-    console.warn('GET /request-batches endpoint not implemented in backend');
-    throw new Error('Request batches list endpoint not yet implemented');
+  async createFacility(facilityData) {
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.FACILITIES, facilityData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to create facility');
+    }
   }
 
+  // ==================== Request Batches ====================
   async getRequestBatch(batchId) {
     try {
       const response = await apiClient.get(API_ENDPOINTS.REQUEST_BATCH(batchId));
@@ -719,20 +561,129 @@ class ApiService {
       throw new Error(error.response?.data?.detail || 'Failed to fetch request batch');
     }
   }
-  
-  async getRequestBatchTimeline(batchId) {
+
+  async getBatchTimeline(batchId) {
     try {
       const response = await apiClient.get(API_ENDPOINTS.REQUEST_BATCH_TIMELINE(batchId));
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.detail || 'Failed to fetch request timeline');
+      throw new Error(error.response?.data?.detail || 'Failed to fetch timeline');
     }
   }
 
-  async createRequestBatch(batchData) {
-    // TODO: Backend doesn't have POST /request-batches endpoint yet
-    console.warn('POST /request-batches endpoint not implemented in backend');
-    throw new Error('Create request batch endpoint not yet implemented');
+  async createTimelineEvent(batchId, eventData) {
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.REQUEST_BATCH_TIMELINE(batchId), {
+        event_type: eventData.event_type,
+        title: eventData.title,
+        description: eventData.description,
+        metadata: eventData.metadata
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to create timeline event');
+    }
+  }
+
+  async getBatchProviders(batchId) {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.REQUEST_BATCH_PROVIDERS(batchId));
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch providers');
+    }
+  }
+
+  async cancelBatch(batchId, reason) {
+    try {
+      const response = await apiClient.put(API_ENDPOINTS.REQUEST_BATCH_CANCEL(batchId), {
+        reason: reason
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to cancel batch');
+    }
+  }
+
+  async getBatchDocuments(batchId) {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.REQUEST_BATCH_DOCUMENTS(batchId));
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch documents');
+    }
+  }
+
+  async downloadBatchDocuments(batchId) {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.REQUEST_BATCH_DOWNLOAD(batchId), {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to download documents');
+    }
+  }
+
+  async getBatchNotes(batchId) {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.REQUEST_BATCH_NOTES(batchId));
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch notes');
+    }
+  }
+
+  async createBatchNote(batchId, noteData) {
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.REQUEST_BATCH_NOTES(batchId), {
+        content: noteData.content,
+        type: noteData.type
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to create note');
+    }
+  }
+
+  // ==================== Health Facts (Reference Data) ====================
+  async getDiseaseFacts(searchParams = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (searchParams.name) params.append('name', searchParams.name);
+      if (searchParams.code) params.append('code', searchParams.code);
+      
+      const response = await apiClient.get(`${API_ENDPOINTS.DISEASE_FACTS}?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch disease facts');
+    }
+  }
+
+  async getLabFacts(searchParams = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (searchParams.name) params.append('name', searchParams.name);
+      if (searchParams.code) params.append('code', searchParams.code);
+      
+      const response = await apiClient.get(`${API_ENDPOINTS.LAB_FACTS}?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch lab facts');
+    }
+  }
+
+  async getMedicationFacts(searchParams = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (searchParams.name) params.append('name', searchParams.name);
+      if (searchParams.code) params.append('code', searchParams.code);
+      
+      const response = await apiClient.get(`${API_ENDPOINTS.MEDICATION_FACTS}?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch medication facts');
+    }
   }
 
   // ==================== System Health ====================

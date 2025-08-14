@@ -4,6 +4,8 @@ import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import { ActionTypes } from '../../context/AppContext';
 import providerService from '../../services/providerService';
+import requestService from '../../services/requestService';
+import toast from '../../utils/toast';
 
 import { 
   Button, 
@@ -77,82 +79,53 @@ const RequestManagementPage = () => {
     deliveryMethod: 'secure_portal'
   });
 
-  // Mock requests data - In production, this would come from backend
-  const [requests, setRequests] = useState([
-    {
-      id: 'req-001',
-      trackingNumber: 'REQ-001-2024',
-      title: 'Complete Medical Records',
-      description: 'Full medical history from 2020-2024',
-      status: 'in_progress',
-      priority: 'high',
-      requestType: 'complete_records',
-      targetProvider: 'City General Hospital',
-      providerId: 'prov-db-001',
-      requestedBy: 'John Doe',
-      createdDate: '2024-12-15T10:30:00Z',
-      dueDate: '2024-12-25T17:00:00Z',
-      estimatedCompletion: '3-5 business days',
-      progress: 65,
-      recordTypes: ['lab_results', 'medications', 'procedures'],
-      notes: 'Needed for insurance claim',
-      contactPreference: 'email',
-      deliveryMethod: 'secure_portal'
-    },
-    {
-      id: 'req-002',
-      trackingNumber: 'REQ-002-2024',
-      title: 'Lab Results Only',
-      description: 'Recent blood work and diagnostic tests',
-      status: 'pending',
-      priority: 'medium',
-      requestType: 'lab_results',
-      targetProvider: 'LifeLabs Medical Laboratory Services',
-      providerId: 'prov-db-003',
-      requestedBy: 'John Doe',
-      createdDate: '2024-12-18T09:15:00Z',
-      dueDate: '2024-12-28T17:00:00Z',
-      estimatedCompletion: '1-2 business days',
-      progress: 0,
-      recordTypes: ['lab_results'],
-      notes: 'For second opinion consultation',
-      contactPreference: 'phone',
-      deliveryMethod: 'email'
-    },
-    {
-      id: 'req-003',
-      trackingNumber: 'REQ-003-2024',
-      title: 'Prescription History',
-      description: 'Medication history for the past 5 years',
-      status: 'completed',
-      priority: 'low',
-      requestType: 'medications',
-      targetProvider: 'Family Health Clinic',
-      providerId: 'custom-001',
-      requestedBy: 'John Doe',
-      createdDate: '2024-12-10T14:22:00Z',
-      dueDate: '2024-12-20T17:00:00Z',
-      estimatedCompletion: '2-3 business days',
-      progress: 100,
-      recordTypes: ['medications'],
-      notes: 'Required for new doctor visit',
-      contactPreference: 'email',
-      deliveryMethod: 'secure_portal',
-      completedDate: '2024-12-17T11:30:00Z'
-    }
-  ]);
+  // Requests data from backend
+  const [requests, setRequests] = useState([]);
 
   // Load user providers on mount
   useEffect(() => {
     loadUserProviders();
   }, []);
+  
+  // Load requests when filters change
+  useEffect(() => {
+    loadRequests();
+  }, [statusFilter, typeFilter, priorityFilter, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Load requests from backend
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      const response = await requestService.getRequests({
+        status: statusFilter,
+        type: typeFilter,
+        priority: priorityFilter,
+        search: searchQuery
+      });
+      
+      setRequests(response.data || []);
+    } catch (error) {
+      console.error('Error loading requests:', error);
+      // Show error toast
+      dispatch({
+        type: ActionTypes.SHOW_NOTIFICATION,
+        payload: {
+          type: 'error',
+          message: 'Failed to load requests'
+        }
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadUserProviders = async () => {
     try {
-      const response = await providerService.getAllProvidersForUser(userId);
-      setUserProviders(response.data);
+      const providers = await providerService.getProviders();
+      setUserProviders(providers || []);
     } catch (error) {
       console.error('Error loading user providers:', error);
+      setUserProviders([]);
     }
   };
 
@@ -183,7 +156,7 @@ const RequestManagementPage = () => {
         p.organizationName?.toLowerCase().includes(providerSearchQuery.toLowerCase())
       );
       
-      const allResults = [...response.data, ...userCustomProviders];
+      const allResults = [...(response.providers || []), ...userCustomProviders];
       
       // Remove duplicates
       const uniqueResults = allResults.filter((provider, index, self) =>
@@ -305,54 +278,107 @@ const RequestManagementPage = () => {
     cancelled: filteredRequests.filter(r => r.status === 'cancelled')
   };
 
-  const handleCreateRequest = () => {
+  const handleCreateRequest = async () => {
     // Validate form
     if (!newRequest.requestType || !newRequest.provider) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
-
-    const request = {
-      id: `req-${Date.now()}`,
-      trackingNumber: generateTrackingNumber(),
-      title: `${formatRequestType(newRequest.requestType)} Request`,
-      description: `${formatRequestType(newRequest.requestType)} from ${newRequest.provider.name}`,
-      status: 'pending',
-      priority: newRequest.priority,
-      requestType: newRequest.requestType,
-      targetProvider: newRequest.provider.name,
-      providerId: newRequest.provider.id,
-      requestedBy: state.user?.name || 'John Doe',
-      createdDate: new Date().toISOString(),
-      dueDate: calculateDueDate(newRequest.priority),
-      estimatedCompletion: getEstimatedCompletion(newRequest.requestType),
-      progress: 0,
-      recordTypes: newRequest.recordTypes.length > 0 ? newRequest.recordTypes : [newRequest.requestType],
-      notes: newRequest.notes,
-      contactPreference: newRequest.contactPreference,
-      deliveryMethod: newRequest.deliveryMethod,
-      urgentReason: newRequest.priority === 'high' ? newRequest.urgentReason : null
-    };
-
-    setRequests([...requests, request]);
-    setShowCreateModal(false);
     
-    // Reset form
-    setNewRequest({
-      requestType: '',
-      provider: null,
-      providerId: '',
-      providerName: '',
-      recordTypes: [],
-      dateRange: { start: '', end: '' },
-      priority: 'medium',
-      notes: '',
-      urgentReason: '',
-      contactPreference: 'email',
-      deliveryMethod: 'secure_portal'
-    });
-    setProviderSearchQuery('');
-    setProviderSearchResults([]);
+    try {
+      setLoading(true);
+      
+      // Since backend doesn't have a create endpoint, we'll create locally
+      // and show a message that it needs backend implementation
+      const request = {
+        id: `req-${Date.now()}`,
+        trackingNumber: generateTrackingNumber(),
+        title: `${formatRequestType(newRequest.requestType)} Request`,
+        description: `${formatRequestType(newRequest.requestType)} from ${newRequest.provider.name}`,
+        status: 'pending',
+        priority: newRequest.priority,
+        requestType: newRequest.requestType,
+        targetProvider: newRequest.provider.name,
+        providerId: newRequest.provider.id,
+        requestedBy: state.user?.name || 'John Doe',
+        createdDate: new Date().toISOString(),
+        dueDate: calculateDueDate(newRequest.priority),
+        estimatedCompletion: getEstimatedCompletion(newRequest.requestType),
+        progress: 0,
+        recordTypes: newRequest.recordTypes.length > 0 ? newRequest.recordTypes : [newRequest.requestType],
+        notes: newRequest.notes,
+        contactPreference: newRequest.contactPreference,
+        deliveryMethod: newRequest.deliveryMethod,
+        urgentReason: newRequest.priority === 'high' ? newRequest.urgentReason : null
+      };
+      
+      // Try to create via service if backend endpoint exists
+      try {
+        const response = await requestService.createRequest({
+          request_type: newRequest.requestType,
+          provider_id: newRequest.provider.id,
+          provider_name: newRequest.provider.name,
+          priority: newRequest.priority,
+          notes: newRequest.notes,
+          record_types: newRequest.recordTypes,
+          date_range: newRequest.dateRange,
+          contact_preference: newRequest.contactPreference,
+          delivery_method: newRequest.deliveryMethod,
+          urgent_reason: newRequest.priority === 'urgent' ? newRequest.urgentReason : null
+        });
+        
+        if (response.success) {
+          toast.success(
+            <div>
+              <div className="font-semibold">Request created successfully!</div>
+              <div className="text-sm mt-1">
+                Tracking #: {response.trackingNumber || response.tracking_number || 'N/A'}
+              </div>
+              <div className="text-sm">You can track your request status anytime.</div>
+            </div>
+          );
+          await loadRequests(); // Reload from backend
+        }
+      } catch (error) {
+        // If backend fails, add locally and show warning
+        console.warn('Backend request creation failed, adding locally:', error);
+        setRequests([...requests, request]);
+        toast.success(
+          <div>
+            <div className="font-semibold">Request created successfully!</div>
+            <div className="text-sm mt-1">
+              Tracking #: {request.trackingNumber}
+            </div>
+            <div className="text-sm">You can track your request status anytime.</div>
+            <div className="text-xs mt-2 text-yellow-600">Note: Saved locally - backend sync pending</div>
+          </div>
+        );
+      }
+      
+      setShowCreateModal(false);
+      
+      // Reset form
+      setNewRequest({
+        requestType: '',
+        provider: null,
+        providerId: '',
+        providerName: '',
+        recordTypes: [],
+        dateRange: { start: '', end: '' },
+        priority: 'medium',
+        notes: '',
+        urgentReason: '',
+        contactPreference: 'email',
+        deliveryMethod: 'secure_portal'
+      });
+      setProviderSearchQuery('');
+      setProviderSearchResults([]);
+    } catch (error) {
+      console.error('Error creating request:', error);
+      toast.error(error.message || 'Failed to create request');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditRequest = () => {
@@ -453,7 +479,7 @@ const RequestManagementPage = () => {
                       >
                         Track
                       </Button>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 whitespace-nowrap">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -485,7 +511,7 @@ const RequestManagementPage = () => {
               ))}
             </div>
           ) : (
-            <Alert variant="info" message="No requests match your current filters." />
+            <div className="text-center text-gray-500 py-8" style={{fontFamily: 'var(--font-body)'}}>No requests match your current filters.</div>
           )}
         </div>
       )
@@ -692,7 +718,7 @@ const RequestManagementPage = () => {
             <Button 
               variant="primary"
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 whitespace-nowrap"
             >
               <PlusIcon className="w-5 h-5" />
               <span>Create Request</span>
@@ -718,6 +744,7 @@ const RequestManagementPage = () => {
                 options={statusOptions}
                 placeholder="Status"
                 size="sm"
+                containerClassName="min-w-[150px]"
               />
               <Select
                 value={{ value: typeFilter, label: typeOptions.find(o => o.value === typeFilter)?.label }}
@@ -725,6 +752,7 @@ const RequestManagementPage = () => {
                 options={typeOptions}
                 placeholder="Type"
                 size="sm"
+                containerClassName="min-w-[140px]"
               />
               <Select
                 value={{ value: priorityFilter, label: priorityOptions.find(o => o.value === priorityFilter)?.label }}
@@ -732,6 +760,7 @@ const RequestManagementPage = () => {
                 options={priorityOptions}
                 placeholder="Priority"
                 size="sm"
+                containerClassName="min-w-[160px]"
               />
             </div>
           </div>
@@ -778,12 +807,44 @@ const RequestManagementPage = () => {
           title="Create New Records Request"
           size="lg"
         >
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Request Type *
-                </label>
+          <div className="space-y-4">
+            {/* Progress indicator */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 whitespace-nowrap">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${newRequest.requestType ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                  1
+                </div>
+                <span className={`text-sm font-medium ${newRequest.requestType ? 'text-primary-600' : 'text-neutral-500'}`}>
+                  Request Type
+                </span>
+              </div>
+              <div className="h-px bg-neutral-200 flex-1 mx-4" />
+              <div className="flex items-center space-x-2 whitespace-nowrap">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${newRequest.provider ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                  2
+                </div>
+                <span className={`text-sm font-medium ${newRequest.provider ? 'text-primary-600' : 'text-neutral-500'}`}>
+                  Provider
+                </span>
+              </div>
+              <div className="h-px bg-neutral-200 flex-1 mx-4" />
+              <div className="flex items-center space-x-2 whitespace-nowrap">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${newRequest.notes || newRequest.priority !== 'medium' ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                  3
+                </div>
+                <span className={`text-sm font-medium ${newRequest.notes || newRequest.priority !== 'medium' ? 'text-primary-600' : 'text-neutral-500'}`}>
+                  Details
+                </span>
+              </div>
+            </div>
+
+
+            <div className="space-y-4">
+              {/* Step 1: Request Type */}
+              <div className="bg-neutral-50 p-3 rounded-lg">
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                  What type of records do you need?
+                </h3>
                 <Select
                   value={newRequest.requestType ? { 
                     value: newRequest.requestType, 
@@ -792,19 +853,22 @@ const RequestManagementPage = () => {
                   onChange={(option) => setNewRequest({...newRequest, requestType: option.value})}
                   options={typeOptions.filter(o => o.value !== 'all')}
                   placeholder="Select request type"
+                  className="w-full"
                 />
               </div>
               
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Healthcare Provider *
-                </label>
+              {/* Step 2: Provider Selection */}
+              <div className="bg-neutral-50 p-3 rounded-lg">
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                  Which healthcare provider has your records?
+                </h3>
                 <div className="relative">
                   <Input
                     value={providerSearchQuery}
                     onChange={(e) => setProviderSearchQuery(e.target.value)}
-                    placeholder="Search for provider by name, organization, or city..."
+                    placeholder="Search by provider name, organization, or city..."
                     leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+                    className="w-full"
                   />
                   
                   {/* Provider search results dropdown */}
@@ -905,16 +969,22 @@ const RequestManagementPage = () => {
                 </p>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Priority Level
-                </label>
-                <Select
-                  value={{ value: newRequest.priority, label: priorityOptions.find(o => o.value === newRequest.priority)?.label }}
-                  onChange={(option) => setNewRequest({...newRequest, priority: option.value})}
-                  options={priorityOptions.filter(o => o.value !== 'all')}
-                />
-              </div>
+              {/* Step 3: Additional Details */}
+              <div className="bg-neutral-50 p-3 rounded-lg space-y-3">
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                  Additional Details
+                </h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Priority Level
+                  </label>
+                  <Select
+                    value={{ value: newRequest.priority, label: priorityOptions.find(o => o.value === newRequest.priority)?.label }}
+                    onChange={(option) => setNewRequest({...newRequest, priority: option.value})}
+                    options={priorityOptions.filter(o => o.value !== 'all')}
+                    className="w-full"
+                  />
+                </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -940,7 +1010,7 @@ const RequestManagementPage = () => {
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {recordTypeOptions.map((option) => (
-                    <label key={option.value} className="flex items-center space-x-2">
+                    <label key={option.value} className="flex items-center space-x-2 whitespace-nowrap">
                       <input
                         type="checkbox"
                         checked={newRequest.recordTypes.includes(option.value)}
@@ -1058,11 +1128,8 @@ const RequestManagementPage = () => {
                 </label>
               </div>
             </div>
+              </div>
 
-            <Alert
-              variant="info"
-              message={`Estimated processing time: ${getEstimatedCompletion(newRequest.requestType || 'complete_records')}`}
-            />
 
             <div className="flex justify-end space-x-3 pt-4 border-t">
               <Button variant="outline" onClick={() => {

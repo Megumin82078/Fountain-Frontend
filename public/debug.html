@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Console</title>
+    <script>
+        window.addEventListener('error', function(e) {
+            document.getElementById('errors').innerHTML += 
+                '<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px;">' +
+                'Error: ' + e.message + '<br>' +
+                'File: ' + e.filename + '<br>' +
+                'Line: ' + e.lineno + ':' + e.colno +
+                '</div>';
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            document.getElementById('errors').innerHTML += 
+                '<div style="color: orange; border: 1px solid orange; padding: 10px; margin: 5px;">' +
+                'Unhandled Promise Rejection: ' + e.reason +
+                '</div>';
+        });
+    </script>
+</head>
+<body>
+    <h1>Debug Console</h1>
+    <p>Open the main app in another tab/window. Errors will appear here:</p>
+    <div id="errors"></div>
+    
+    <h2>Instructions:</h2>
+    <ol>
+        <li>Keep this tab open</li>
+        <li>Open <a href="http://localhost:5173" target="_blank">http://localhost:5173</a> in a new tab</li>
+        <li>Check back here for any errors</li>
+        <li>Also check browser console (F12) in both tabs</li>
+    </ol>
+</body>
+</html>

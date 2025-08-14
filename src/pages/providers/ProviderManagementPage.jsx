@@ -6,6 +6,7 @@ import providerService, {
   SPECIALTIES, 
   LANGUAGES
 } from '../../services/providerService';
+import toast from '../../utils/toast';
 
 import { 
   Button, 
@@ -16,8 +17,10 @@ import {
   Badge, 
   Alert,
   Modal,
+  ConfirmModal,
   Tabs,
-  LoadingSpinner
+  LoadingSpinner,
+  EmptyState
 } from '../../components/common';
 import { 
   PlusIcon, 
@@ -54,6 +57,8 @@ const ProviderManagementPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingProviderId, setDeletingProviderId] = useState(null);
   
   // Forms
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,6 +101,7 @@ const ProviderManagementPage = () => {
       setMyProviders(providers);
     } catch (error) {
       console.error('Error loading providers:', error);
+      toast.error('Failed to load providers. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -111,6 +117,7 @@ const ProviderManagementPage = () => {
       setActiveTab(1); // Switch to search results tab
     } catch (error) {
       console.error('Error searching providers:', error);
+      toast.error('Failed to search providers. Please try again.');
     } finally {
       setSearchLoading(false);
     }
@@ -118,30 +125,45 @@ const ProviderManagementPage = () => {
 
   const handleAddProvider = async () => {
     if (!newProvider.name || !newProvider.address.street || !newProvider.address.city) {
-      alert('Please fill in required fields: Name, Street Address, and City');
+      toast.error('Please fill in required fields: Name, Street Address, and City');
       return;
     }
 
     try {
+      setLoading(true);
       const provider = await providerService.createProvider(newProvider);
       setMyProviders([...myProviders, provider]);
       setShowAddModal(false);
       resetNewProviderForm();
       setActiveTab(0); // Switch to My Providers tab
+      toast.success('Provider added successfully');
     } catch (error) {
       console.error('Error adding provider:', error);
-      alert('Failed to add provider. Please try again.');
+      toast.error(error.message || 'Failed to add provider. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteProvider = async (providerId) => {
-    if (!confirm('Are you sure you want to delete this provider?')) return;
+  const handleDeleteProvider = (providerId) => {
+    setDeletingProviderId(providerId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteProvider = async () => {
+    if (!deletingProviderId) return;
     
     try {
-      await providerService.deleteProvider(providerId);
-      setMyProviders(myProviders.filter(p => p.id !== providerId));
+      await providerService.deleteProvider(deletingProviderId);
+      setMyProviders(myProviders.filter(p => p.id !== deletingProviderId));
+      setShowDetailsModal(false);
+      setShowDeleteConfirm(false);
+      toast.success('Provider deleted successfully');
     } catch (error) {
       console.error('Error deleting provider:', error);
+      toast.error('Failed to delete provider. Please try again.');
+    } finally {
+      setDeletingProviderId(null);
     }
   };
 
@@ -220,7 +242,7 @@ const ProviderManagementPage = () => {
       <div className="mt-3 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm text-neutral-600">Type:</span>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 whitespace-nowrap">
             {getProviderIcon(provider.type)}
             <span className="text-sm font-medium">{formatProviderType(provider.type)}</span>
           </div>
@@ -284,9 +306,13 @@ const ProviderManagementPage = () => {
               ))}
             </div>
           ) : (
-            <Alert 
-              variant="info" 
-              message="No providers added yet. Add your healthcare providers to easily manage and access their information."
+            <EmptyState
+              icon={BuildingOfficeIcon}
+              title="No providers added yet"
+              description="Add your healthcare providers to easily manage and access their information."
+              actionLabel="Add Provider"
+              onAction={() => setShowAddModal(true)}
+              variant="default"
             />
           )}
         </div>
@@ -352,7 +378,7 @@ const ProviderManagementPage = () => {
             <Button 
               variant="primary"
               onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 whitespace-nowrap"
             >
               <PlusIcon className="w-5 h-5" />
               <span>Add Provider</span>
@@ -392,23 +418,55 @@ const ProviderManagementPage = () => {
           title="Add Healthcare Provider"
           size="lg"
         >
-          <div className="space-y-6">
-            <Alert
-              variant="info"
-              message="Add a healthcare provider with their contact information."
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Provider Name *
-                </label>
-                <Input
-                  value={newProvider.name}
-                  onChange={(e) => setNewProvider({...newProvider, name: e.target.value})}
-                  placeholder="e.g., Dr. John Smith or City Medical Clinic"
-                />
+          <div className="space-y-4">
+            {/* Progress Steps */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 whitespace-nowrap">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${newProvider.name ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                  1
+                </div>
+                <span className={`text-sm font-medium ${newProvider.name ? 'text-primary-600' : 'text-neutral-500'}`}>
+                  Basic Info
+                </span>
               </div>
+              <div className="h-px bg-neutral-200 flex-1 mx-4" />
+              <div className="flex items-center space-x-2 whitespace-nowrap">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${newProvider.address.street && newProvider.address.city ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                  2
+                </div>
+                <span className={`text-sm font-medium ${newProvider.address.street && newProvider.address.city ? 'text-primary-600' : 'text-neutral-500'}`}>
+                  Location
+                </span>
+              </div>
+              <div className="h-px bg-neutral-200 flex-1 mx-4" />
+              <div className="flex items-center space-x-2 whitespace-nowrap">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${newProvider.phone || newProvider.email ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                  3
+                </div>
+                <span className={`text-sm font-medium ${newProvider.phone || newProvider.email ? 'text-primary-600' : 'text-neutral-500'}`}>
+                  Contact
+                </span>
+              </div>
+            </div>
+
+
+            {/* Step 1: Basic Information */}
+            <div className="bg-neutral-50 p-3 rounded-lg space-y-3">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                Provider Information
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Provider Name *
+                  </label>
+                  <Input
+                    value={newProvider.name}
+                    onChange={(e) => setNewProvider({...newProvider, name: e.target.value})}
+                    placeholder="e.g., Dr. John Smith or City Medical Clinic"
+                    className="w-full"
+                  />
+                </div>
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -463,19 +521,27 @@ const ProviderManagementPage = () => {
                   </div>
                 </>
               )}
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-neutral-900">Address</h4>
+            {/* Step 2: Location */}
+            <div className="bg-neutral-50 p-3 rounded-lg space-y-3">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                Location Details
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Street Address *
+                  </label>
                   <Input
                     value={newProvider.address.street}
                     onChange={(e) => setNewProvider({
                       ...newProvider, 
                       address: {...newProvider.address, street: e.target.value}
                     })}
-                    placeholder="Street Address *"
+                    placeholder="123 Main Street"
+                    className="w-full"
                   />
                 </div>
                 <div>
@@ -531,15 +597,22 @@ const ProviderManagementPage = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-neutral-900">Contact Information</h4>
+            {/* Step 3: Contact Information */}
+            <div className="bg-neutral-50 p-3 rounded-lg space-y-3">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                Contact Information
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Phone Number
+                  </label>
                   <Input
                     value={newProvider.phone}
                     onChange={(e) => setNewProvider({...newProvider, phone: e.target.value})}
-                    placeholder="Phone Number"
+                    placeholder="(555) 123-4567"
                     leftIcon={<PhoneIcon className="w-4 h-4" />}
+                    className="w-full"
                   />
                 </div>
                 <div>
@@ -721,6 +794,21 @@ const ProviderManagementPage = () => {
             </div>
           )}
         </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setDeletingProviderId(null);
+          }}
+          onConfirm={confirmDeleteProvider}
+          title="Delete Provider"
+          message="Are you sure you want to delete this provider? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+        />
       </div>
     </AppLayout>
   );

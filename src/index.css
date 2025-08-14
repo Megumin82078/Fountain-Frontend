@@ -44,9 +44,9 @@
   --color-error-500: #404040;
   --color-error-700: #262626;
 
-  /* Premium Typography Scale */
-  --font-display: 'Playfair Display', serif;
-  --font-body: 'Avenir', 'Avenir Next', system-ui, -apple-system, sans-serif;
+  /* Premium Typography Scale - Futura-inspired */
+  --font-display: 'Jost', 'Futura', 'Futura PT', 'Futura Std', system-ui, -apple-system, sans-serif;
+  --font-body: 'Jost', 'Futura', 'Futura PT', 'Futura Std', system-ui, -apple-system, sans-serif;
   --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
 
   /* Sophisticated Shadows - Subtle yet Luxurious */
@@ -74,24 +74,32 @@
   
   body {
     font-family: var(--font-body);
-    line-height: 1.65;
+    line-height: 1.6;
     color: var(--color-gray-900);
     background: #ffffff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-weight: 400;
+    letter-spacing: 0.01em;
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
     color: var(--color-black);
+    text-transform: none;
   }
 
   ::selection {
     @apply bg-black text-white;
+  }
+
+  /* Logo - preserve original font */
+  .logo-text {
+    font-family: 'Playfair Display', serif !important;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -119,14 +127,14 @@
   }
 
   .text-display {
-    @apply text-4xl md:text-6xl font-semibold text-obsidian-900;
+    @apply text-4xl md:text-6xl font-medium text-obsidian-900;
     font-family: var(--font-display);
     line-height: 1.1;
     letter-spacing: -0.03em;
   }
   
   .text-headline {
-    @apply text-2xl md:text-4xl font-semibold text-obsidian-900;
+    @apply text-2xl md:text-4xl font-medium text-obsidian-900;
     font-family: var(--font-display);
     line-height: 1.15;
     letter-spacing: -0.02em;
@@ -213,8 +221,8 @@
   .btn-foundation {
     @apply inline-flex items-center justify-center font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed;
     font-family: var(--font-body);
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-weight: 500;
+    letter-spacing: 0.02em;
   }
   
   .btn-royal {
@@ -282,7 +290,7 @@
   }
   
   .label-luxury {
-    @apply block text-sm font-semibold text-obsidian-800 mb-3;
+    @apply block text-sm font-medium text-obsidian-800 mb-3;
     font-family: var(--font-body);
     letter-spacing: -0.01em;
   }
@@ -290,22 +298,22 @@
   /* Sophisticated Health Status System */
   .status-exceptional {
     @apply bg-gradient-to-r from-success-50 to-success-100 text-success-800 border-2 border-success-200;
-    @apply px-4 py-2 rounded-full text-sm font-semibold;
+    @apply px-4 py-2 rounded-full text-sm font-medium;
   }
   
   .status-attention {
     @apply bg-gradient-to-r from-warning-50 to-warning-100 text-warning-800 border-2 border-warning-200;
-    @apply px-4 py-2 rounded-full text-sm font-semibold;
+    @apply px-4 py-2 rounded-full text-sm font-medium;
   }
   
   .status-critical {
     @apply bg-gradient-to-r from-error-50 to-error-100 text-error-800 border-2 border-error-200;
-    @apply px-4 py-2 rounded-full text-sm font-semibold;
+    @apply px-4 py-2 rounded-full text-sm font-medium;
   }
   
   .status-dormant {
     @apply bg-gradient-to-r from-obsidian-50 to-obsidian-100 text-obsidian-600 border-2 border-obsidian-200;
-    @apply px-4 py-2 rounded-full text-sm font-semibold;
+    @apply px-4 py-2 rounded-full text-sm font-medium;
   }
   
   /* Divine Navigation Elements */

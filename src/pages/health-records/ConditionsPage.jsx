@@ -4,12 +4,12 @@ import {
   Button, 
   Card, 
   HealthCard,
-  Alert,
   Input,
   Select,
   Modal,
   Badge,
-  LoadingSpinner
+  LoadingSpinner,
+  EmptyState
 } from '../../components/common';
 import { 
   PlusIcon, 
@@ -26,12 +26,11 @@ import {
 import { useApp } from '../../context/AppContext';
 import apiService from '../../services/api';
 import { ConditionStatus, VerificationStatus } from '../../types/api';
-import { useNotifications } from '../../hooks/useNotifications';
+import toast from '../../utils/toast';
 import useHealthData from '../../hooks/useHealthData';
 
 const ConditionsPage = () => {
   const { user } = useApp();
-  const { showSuccess, showError } = useNotifications();
   const { conditions, loading, fetchHealthDataCategory } = useHealthData();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,9 +42,12 @@ const ConditionsPage = () => {
   const [selectedCondition, setSelectedCondition] = useState(null);
   const [editingCondition, setEditingCondition] = useState(null);
   const [addLoading, setAddLoading] = useState(false);
+  const [availableDiseases, setAvailableDiseases] = useState([]);
+  const [diseaseSearchTerm, setDiseaseSearchTerm] = useState('');
   
   // New condition form
   const [newCondition, setNewCondition] = useState({
+    disease_id: '',
     name: '',
     icd10Code: '',
     onset_date: new Date().toISOString().split('T')[0],
@@ -54,16 +56,27 @@ const ConditionsPage = () => {
     notes: ''
   });
 
-  // Load conditions on mount
+  // Load conditions and diseases on mount
   useEffect(() => {
     loadConditions();
+    loadAvailableDiseases();
   }, []);
 
   const loadConditions = async () => {
     try {
       await fetchHealthDataCategory('conditions');
     } catch (error) {
-      console.error('Error loading conditions:', error);
+      // Error is handled by fetchHealthDataCategory
+    }
+  };
+
+  const loadAvailableDiseases = async () => {
+    try {
+      const diseases = await apiService.getDiseaseFacts();
+      setAvailableDiseases(diseases || []);
+    } catch (error) {
+      // Fallback to empty array
+      setAvailableDiseases([]);
     }
   };
 
@@ -120,6 +133,7 @@ const ConditionsPage = () => {
 
   const handleAddCondition = () => {
     setNewCondition({
+      disease_id: '',
       name: '',
       icd10Code: '',
       onset_date: new Date().toISOString().split('T')[0],
@@ -127,23 +141,21 @@ const ConditionsPage = () => {
       verification_status: VerificationStatus.CONFIRMED,
       notes: ''
     });
+    setDiseaseSearchTerm('');
     setShowAddModal(true);
   };
 
   const handleSaveCondition = async () => {
-    if (!newCondition.name.trim()) {
-      showError('Please enter a condition name');
+    if (!newCondition.disease_id) {
+      toast.error('Please select a condition from the list');
       return;
     }
 
     try {
       setAddLoading(true);
       
-      // For now, we'll create a mock disease_id
-      // In a real app, you'd search for the disease by name/code
       const conditionData = {
-        user_id: user?.id,
-        disease_id: `disease-${Date.now()}`, // Mock disease ID
+        disease_id: newCondition.disease_id,
         onset_date: newCondition.onset_date || null,
         clinical_status: newCondition.clinical_status,
         verification_status: newCondition.verification_status
@@ -153,10 +165,9 @@ const ConditionsPage = () => {
       await loadConditions();
       
       setShowAddModal(false);
-      showSuccess('Condition added successfully!');
+      toast.success('Condition added successfully!');
     } catch (error) {
-      showError('Failed to add condition. Please try again.');
-      console.error('Error adding condition:', error);
+      toast.error('Failed to add condition. Please try again.');
     } finally {
       setAddLoading(false);
     }
@@ -176,10 +187,9 @@ const ConditionsPage = () => {
       
       setShowEditModal(false);
       setEditingCondition(null);
-      showSuccess('Condition updated successfully!');
+      toast.success('Condition updated successfully!');
     } catch (error) {
-      showError('Failed to update condition. Please try again.');
-      console.error('Error updating condition:', error);
+      toast.error('Failed to update condition. Please try again.');
     }
   };
 
@@ -191,10 +201,9 @@ const ConditionsPage = () => {
       await loadConditions();
       
       setShowDetailsModal(false);
-      showSuccess('Condition deleted successfully!');
+      toast.success('Condition deleted successfully!');
     } catch (error) {
-      showError('Failed to delete condition. Please try again.');
-      console.error('Error deleting condition:', error);
+      toast.error('Failed to delete condition. Please try again.');
     }
   };
 
@@ -250,7 +259,7 @@ const ConditionsPage = () => {
             <Button 
               variant="primary"
               onClick={handleAddCondition}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 whitespace-nowrap"
             >
               <PlusIcon className="w-5 h-5" />
               <span>Add Condition</span>
@@ -318,7 +327,7 @@ const ConditionsPage = () => {
 
         {/* Conditions List */}
         {filteredConditions.length > 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Active Conditions */}
             {groupedConditions.active.length > 0 && (
               <div>
@@ -449,11 +458,17 @@ const ConditionsPage = () => {
             )}
           </div>
         ) : (
-          <Alert
-            variant="info"
-            message={searchQuery || statusFilter !== 'all' || verificationFilter !== 'all' 
-              ? "No conditions found matching your filters." 
-              : "No medical conditions recorded. Click 'Add Condition' to get started."}
+          <EmptyState
+            icon={HeartIcon}
+            title={searchQuery || statusFilter !== 'all' || verificationFilter !== 'all' 
+              ? "No conditions found" 
+              : "No medical conditions recorded"}
+            description={searchQuery || statusFilter !== 'all' || verificationFilter !== 'all' 
+              ? "Try adjusting your filters to see more results." 
+              : "Track your medical conditions to maintain a complete health history."}
+            actionLabel={!(searchQuery || statusFilter !== 'all' || verificationFilter !== 'all') ? "Add Condition" : null}
+            onAction={!(searchQuery || statusFilter !== 'all' || verificationFilter !== 'all') ? () => setShowAddModal(true) : null}
+            variant="default"
           />
         )}
 
@@ -464,32 +479,63 @@ const ConditionsPage = () => {
           title="Add Medical Condition"
           size="lg"
         >
-          <div className="space-y-6">
-            <Alert
-              variant="info"
-              message="Enter your medical condition information. This will be saved to your health records."
-            />
+          <div className="space-y-4">
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Condition Name *
+                Search Condition *
               </label>
               <Input
-                value={newCondition.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="e.g., Type 2 Diabetes, Hypertension"
+                value={diseaseSearchTerm}
+                onChange={(e) => setDiseaseSearchTerm(e.target.value)}
+                placeholder="Search by condition name or ICD code..."
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                ICD-10 Code (Optional)
-              </label>
-              <Input
-                value={newCondition.icd10Code}
-                onChange={(e) => handleInputChange('icd10Code', e.target.value)}
-                placeholder="e.g., E11.9, I10"
-              />
+              {diseaseSearchTerm && (
+                <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+                  {availableDiseases
+                    .filter(disease => {
+                      const searchLower = diseaseSearchTerm.toLowerCase();
+                      return (
+                        disease.name?.toLowerCase().includes(searchLower) ||
+                        disease.code?.toLowerCase().includes(searchLower)
+                      );
+                    })
+                    .slice(0, 10)
+                    .map(disease => (
+                      <div
+                        key={disease.id}
+                        className="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        onClick={() => {
+                          setNewCondition(prev => ({
+                            ...prev,
+                            disease_id: disease.id,
+                            name: disease.name,
+                            icd10Code: disease.code
+                          }));
+                          setDiseaseSearchTerm(disease.name);
+                        }}
+                      >
+                        <div className="font-medium text-sm">{disease.name}</div>
+                        <div className="text-xs text-gray-500">{disease.code}</div>
+                      </div>
+                    ))}
+                  {diseaseSearchTerm && availableDiseases.filter(disease => {
+                      const searchLower = diseaseSearchTerm.toLowerCase();
+                      return (
+                        disease.name?.toLowerCase().includes(searchLower) ||
+                        disease.code?.toLowerCase().includes(searchLower)
+                      );
+                    }).length === 0 && (
+                    <div className="px-3 py-2 text-sm text-gray-500">No conditions found</div>
+                  )}
+                </div>
+              )}
+              {newCondition.disease_id && (
+                <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                  <div className="text-sm font-medium">Selected: {newCondition.name}</div>
+                  <div className="text-xs text-gray-600">{newCondition.icd10Code}</div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -567,7 +613,7 @@ const ConditionsPage = () => {
           size="lg"
         >
           {editingCondition && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="bg-neutral-50 p-4 rounded-lg">
                 <h4 className="font-medium text-neutral-900 mb-2">
                   {editingCondition.disease?.name || 'Unknown Condition'}
@@ -625,7 +671,7 @@ const ConditionsPage = () => {
           size="lg"
         >
           {selectedCondition && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="bg-primary-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold text-primary-900 mb-1">
                   {selectedCondition.disease?.name || 'Unknown Condition'}

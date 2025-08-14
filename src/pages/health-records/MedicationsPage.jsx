@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
+import toast from '../../utils/toast';
+import { useWebNotifications } from '../../hooks/useNotifications';
 
 import { 
   Button, 
@@ -21,8 +23,16 @@ import {
   UserIcon
 } from '@heroicons/react/24/outline';
 
+// Custom Pill icon to match sidebar
+const PillIcon = ({ className }) => (
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+  </svg>
+);
+
 const MedicationsPage = () => {
   const { state, dispatch } = useApp();
+  const { showMedicationReminder } = useWebNotifications();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -113,8 +123,33 @@ const MedicationsPage = () => {
   };
 
   const handleSaveMedication = () => {
+    // Validation
     if (!newMedication.name.trim()) {
-      showError('Please enter a medication name');
+      toast.error('Please enter a medication name');
+      return;
+    }
+    
+    if (!newMedication.dosage || !newMedication.dosageUnit) {
+      toast.error('Please enter dosage and unit');
+      return;
+    }
+    
+    if (!newMedication.frequency) {
+      toast.error('Please specify frequency');
+      return;
+    }
+    
+    if (!newMedication.startDate) {
+      toast.error('Please enter start date');
+      return;
+    }
+    
+    // Validate dates
+    const startDate = new Date(newMedication.startDate);
+    const endDate = newMedication.endDate ? new Date(newMedication.endDate) : null;
+    
+    if (endDate && startDate > endDate) {
+      toast.error('End date must be after start date');
       return;
     }
 
@@ -130,7 +165,7 @@ const MedicationsPage = () => {
     });
 
     setShowAddModal(false);
-    showSuccess('Medication added successfully!');
+    toast.success('Medication added successfully!');
   };
 
   const handleInputChange = (field, value) => {
@@ -177,7 +212,7 @@ const MedicationsPage = () => {
 
   const handleUpdateMedication = () => {
     if (!editingMedication.name.trim()) {
-      showError('Please enter a medication name');
+      toast.error('Please enter a medication name');
       return;
     }
 
@@ -188,7 +223,7 @@ const MedicationsPage = () => {
 
     setShowEditModal(false);
     setEditingMedication(null);
-    showSuccess('Medication updated successfully!');
+    toast.success('Medication updated successfully!');
   };
 
   const handleDeleteMedication = (medicationId) => {
@@ -198,7 +233,7 @@ const MedicationsPage = () => {
         payload: medicationId
       });
       setShowDetailsModal(false);
-      showSuccess('Medication deleted successfully!');
+      toast.success('Medication deleted successfully!');
     }
   };
 
@@ -246,7 +281,7 @@ const MedicationsPage = () => {
             <Button 
               variant="primary"
               onClick={handleAddMedication}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 whitespace-nowrap"
             >
               <PlusIcon className="w-5 h-5" />
               <span>Add Medication</span>
@@ -296,6 +331,7 @@ const MedicationsPage = () => {
                 options={statusOptions}
                 placeholder="Status"
                 size="sm"
+                containerClassName="min-w-[140px]"
               />
               <Select
                 value={{ value: typeFilter, label: typeOptions.find(o => o.value === typeFilter)?.label }}
@@ -303,6 +339,7 @@ const MedicationsPage = () => {
                 options={typeOptions}
                 placeholder="Type"
                 size="sm"
+                containerClassName="min-w-[130px]"
               />
             </div>
           </div>
@@ -344,7 +381,7 @@ const MedicationsPage = () => {
 
         {/* Medications List */}
         {filteredMedications.length > 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Active Medications */}
             {groupedMedications.active.length > 0 && (
               <div>
@@ -515,7 +552,7 @@ const MedicationsPage = () => {
           <Card className="text-center py-12">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">💊</span>
+                <PillIcon className="w-8 h-8 text-neutral-400" />
               </div>
               <h3 className="text-lg font-semibold text-neutral-900 mb-2">
                 {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' 
@@ -545,7 +582,7 @@ const MedicationsPage = () => {
           title="Add Medication"
           size="lg"
         >
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -669,7 +706,7 @@ const MedicationsPage = () => {
           size="lg"
         >
           {selectedMedication && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-neutral-700">Status</label>
@@ -776,7 +813,7 @@ const MedicationsPage = () => {
           size="lg"
         >
           {editingMedication && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">

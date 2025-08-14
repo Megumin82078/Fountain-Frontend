@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
+import toast from '../utils/toast';
 
 // Custom hook for managing toast notifications
 export const useNotifications = () => {
@@ -39,6 +40,9 @@ export const useNotifications = () => {
 
   // Convenience methods for different notification types
   const showSuccess = useCallback((message, title = 'Success') => {
+    // Use global toast for immediate feedback
+    toast.success(message, title);
+    
     return addNotification({
       type: 'success',
       title,
@@ -48,6 +52,9 @@ export const useNotifications = () => {
   }, [addNotification]);
 
   const showError = useCallback((message, title = 'Error') => {
+    // Use global toast for immediate feedback
+    toast.error(message, title);
+    
     return addNotification({
       type: 'error',
       title,
@@ -57,6 +64,9 @@ export const useNotifications = () => {
   }, [addNotification]);
 
   const showWarning = useCallback((message, title = 'Warning') => {
+    // Use global toast for immediate feedback
+    toast.warning(message, title);
+    
     return addNotification({
       type: 'warning',
       title,
@@ -66,6 +76,9 @@ export const useNotifications = () => {
   }, [addNotification]);
 
   const showInfo = useCallback((message, title = 'Info') => {
+    // Use global toast for immediate feedback
+    toast.info(message, title);
+    
     return addNotification({
       type: 'info',
       title,

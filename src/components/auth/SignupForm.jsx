@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useApi';
 import { validateEmail, validatePassword, validatePhone } from '../../utils/helpers';
 import { VALIDATION_RULES, UserRoles, UserTypes } from '../../constants';
+import toast from '../../utils/toast';
 
 const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
   const { signUp, loading } = useAuth();
@@ -22,6 +23,8 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState(1); // Multi-step form
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -124,12 +127,24 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
         medical_history: formData.medical_history
       };
 
+      console.log('Submitting signup data:', signupData);
       await signUp(signupData);
-      onSuccess?.();
+      
+      // Show success message with email confirmation notice
+      setUserEmail(formData.email);
+      setSignupSuccess(true);
+      toast.success('Account created! Please check your email to confirm.');
+      
+      // Don't call onSuccess - user needs to confirm email first
     } catch (error) {
+      console.error('Signup error:', error);
+      const errorMessage = error.message || 'Sign up failed. Please try again.';
       setErrors({
-        submit: error.message || 'Sign up failed. Please try again.'
+        submit: errorMessage
       });
+      toast.error(errorMessage);
+      // Scroll to top to show error
+      window.scrollTo(0, 0);
     }
   };
 
@@ -139,7 +154,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
         <h2 className="text-3xl font-bold text-neutral-900 mb-2">
           Create Account
         </h2>
-        <p className="text-neutral-600" style={{fontFamily: 'var(--font-body)'}}>
+        <p className="text-neutral-600">
           Join Fountain to manage your health records
         </p>
       </div>
@@ -147,17 +162,24 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
       <div className="space-y-6">
         {errors.submit && (
           <div className="bg-error-50 border border-error-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-error-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-error-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-error-700 text-sm">{errors.submit}</span>
+              <div className="flex-1">
+                <span className="text-error-700 text-sm font-medium block">{errors.submit}</span>
+                {errors.submit.includes('backend server') && (
+                  <span className="text-error-600 text-xs mt-1 block">
+                    Please start the backend server with: <code className="bg-error-100 px-1 rounded">cd fountain-backend && uvicorn main:app --reload</code>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+          <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-2">
             Email Address *
           </label>
           <input
@@ -176,7 +198,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+          <label htmlFor="password" className="block text-sm font-bold text-gray-800 mb-2">
             Password *
           </label>
           <div className="relative">
@@ -211,13 +233,13 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
           {errors.password && (
             <p className="mt-1 text-sm text-error-600">{errors.password}</p>
           )}
-          <p className="mt-1 text-xs text-gray-600 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+          <p className="mt-1 text-xs text-gray-600 font-medium">
             Must contain at least 8 characters with uppercase, lowercase, and numbers
           </p>
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+          <label htmlFor="confirmPassword" className="block text-sm font-bold text-gray-800 mb-2">
             Confirm Password *
           </label>
           <div className="relative">
@@ -256,7 +278,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="role" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+            <label htmlFor="role" className="block text-sm font-bold text-gray-800 mb-2">
               Role *
             </label>
             <select
@@ -276,7 +298,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
           </div>
 
           <div>
-            <label htmlFor="type" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+            <label htmlFor="type" className="block text-sm font-bold text-gray-800 mb-2">
               Account Type *
             </label>
             <select
@@ -311,10 +333,10 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
   const renderStep2 = () => (
     <>
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-black mb-2 tracking-tight" style={{fontFamily: 'var(--font-display)'}}>
+        <h2 className="text-3xl font-bold text-black mb-2 tracking-tight">
           Complete Your Profile
         </h2>
-        <p className="text-gray-700 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+        <p className="text-gray-700 font-medium">
           Help us personalize your experience (optional)
         </p>
       </div>
@@ -322,7 +344,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="sex" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+            <label htmlFor="sex" className="block text-sm font-bold text-gray-800 mb-2">
               Sex
             </label>
             <select
@@ -342,7 +364,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
           </div>
 
           <div>
-            <label htmlFor="age" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+            <label htmlFor="age" className="block text-sm font-bold text-gray-800 mb-2">
               Age
             </label>
             <input
@@ -364,7 +386,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
         </div>
 
         <div>
-          <label htmlFor="phone" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+          <label htmlFor="phone" className="block text-sm font-bold text-gray-800 mb-2">
             Phone Number
           </label>
           <input
@@ -383,7 +405,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
         </div>
 
         <div>
-          <label htmlFor="address" className="block text-sm font-bold text-gray-800 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+          <label htmlFor="address" className="block text-sm font-bold text-gray-800 mb-2">
             Address
           </label>
           <textarea
@@ -427,6 +449,80 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
     </>
   );
 
+  // Show success message if signup completed
+  if (signupSuccess) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+          <div className="text-center">
+            {/* Success Icon */}
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+              <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email!</h2>
+            
+            <p className="text-gray-600 mb-6">
+              We've sent a confirmation email to:
+            </p>
+            
+            <p className="text-lg font-semibold text-gray-900 mb-6 bg-gray-50 p-3 rounded-lg">
+              {userEmail}
+            </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800 mb-2">
+                <strong>Important:</strong> Click the link in your email to confirm your account.
+              </p>
+              <p className="text-sm text-blue-700">
+                The confirmation link will expire in 24 hours.
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Didn't receive the email? Check your spam folder.
+              </p>
+              
+              <button
+                onClick={() => {
+                  setSignupSuccess(false);
+                  setStep(1);
+                  setFormData({
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                    role: UserRoles.PATIENT,
+                    type: UserTypes.INDIVIDUAL,
+                    sex: '',
+                    age: '',
+                    phone: '',
+                    address: '',
+                    medical_history: {}
+                  });
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Sign up with a different email
+              </button>
+            </div>
+            
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <button
+                onClick={onSwitchToLogin}
+                className="btn-primary w-full"
+              >
+                Go to Login
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-md mx-auto">
       {/* Progress indicator */}
@@ -434,7 +530,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
         <div className="flex items-center justify-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
             step >= 1 ? 'bg-black text-white shadow-lg' : 'bg-gray-200 text-gray-500'
-          }`} style={{fontFamily: 'var(--font-body)'}}>
+          }`}>
             1
           </div>
           <div className={`w-16 h-1 mx-2 rounded-full ${
@@ -442,11 +538,11 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
           }`}></div>
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
             step >= 2 ? 'bg-black text-white shadow-lg' : 'bg-gray-200 text-gray-500'
-          }`} style={{fontFamily: 'var(--font-body)'}}>
+          }`}>
             2
           </div>
         </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-600 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+        <div className="flex justify-between mt-2 text-xs text-gray-600 font-medium">
           <span>Account Info</span>
           <span>Profile Details</span>
         </div>
@@ -457,12 +553,12 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }) => {
       </form>
 
       <div className="text-center mt-6">
-        <p className="text-sm text-gray-700 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+        <p className="text-sm text-gray-700 font-medium">
           Already have an account?{' '}
           <button
             type="button"
             onClick={onSwitchToLogin}
-            className="text-black hover:text-gray-700 font-bold transition-all duration-200 hover:scale-105" style={{fontFamily: 'var(--font-body)'}}
+            className="text-black hover:text-gray-700 font-bold transition-all duration-200 hover:scale-105"
           >
             Sign in here
           </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
-
+import toast from '../../utils/toast';
 import { useHealthData } from '../../hooks/useHealthData';
 import { 
   Button, 
@@ -20,7 +20,7 @@ import {
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
   CalendarIcon,
-  BeakerIcon,
+  DocumentTextIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
 
@@ -152,11 +152,11 @@ const LabResultsPage = () => {
     
     const validFiles = files.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        console.error(`${file.name} is not a supported file type. Please upload PDF, JPG, or PNG files.`);
+        toast.error(`${file.name} is not a supported file type. Please upload PDF, JPG, or PNG files.`);
         return false;
       }
       if (file.size > maxSize) {
-        console.error(`${file.name} is too large. Please upload files smaller than 10MB.`);
+        toast.error(`${file.name} is too large. Please upload files smaller than 10MB.`);
         return false;
       }
       return true;
@@ -196,11 +196,11 @@ const LabResultsPage = () => {
     
     const validFiles = files.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        console.error(`${file.name} is not a supported file type. Please upload PDF, JPG, or PNG files.`);
+        toast.error(`${file.name} is not a supported file type. Please upload PDF, JPG, or PNG files.`);
         return false;
       }
       if (file.size > maxSize) {
-        console.error(`${file.name} is too large. Please upload files smaller than 10MB.`);
+        toast.error(`${file.name} is too large. Please upload files smaller than 10MB.`);
         return false;
       }
       return true;
@@ -256,7 +256,7 @@ const LabResultsPage = () => {
 
   const handleSaveResult = () => {
     if (!newResult.testName.trim() || !newResult.result.trim()) {
-      console.error('Please enter test name and result');
+      toast.error('Please enter test name and result');
       return;
     }
 
@@ -276,7 +276,7 @@ const LabResultsPage = () => {
     });
 
     setShowAddModal(false);
-    console.log('Lab result added successfully!');
+    toast.success('Lab result added successfully!');
   };
 
   const handleEditResult = (result) => {
@@ -287,7 +287,7 @@ const LabResultsPage = () => {
 
   const handleUpdateResult = () => {
     if (!editingResult.testName.trim() || !editingResult.result.trim()) {
-      console.error('Please enter test name and result');
+      toast.error('Please enter test name and result');
       return;
     }
 
@@ -307,7 +307,7 @@ const LabResultsPage = () => {
 
     setShowEditModal(false);
     setEditingResult(null);
-    console.log('Lab result updated successfully!');
+    toast.success('Lab result updated successfully!');
   };
 
   const handleDeleteResult = (resultId) => {
@@ -317,7 +317,7 @@ const LabResultsPage = () => {
         payload: resultId
       });
       setShowDetailsModal(false);
-      console.log('Lab result deleted successfully!');
+      toast.success('Lab result deleted successfully!');
     }
   };
 
@@ -456,7 +456,7 @@ const LabResultsPage = () => {
               </HealthCard>
             ))
           ) : (
-            <Alert variant="info" message="No lab results match your current filters." />
+            <div className="text-center text-gray-500 py-8" style={{fontFamily: 'var(--font-body)'}}>No lab results match your current filters.</div>
           )}
         </div>
       )
@@ -465,12 +465,12 @@ const LabResultsPage = () => {
       key: 'categories',
       label: 'By Category',
       content: (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {Object.keys(groupedByCategory).length > 0 ? (
             Object.entries(groupedByCategory).map(([category, results]) => (
               <div key={category}>
                 <h4 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center">
-                  <BeakerIcon className="w-5 h-5 text-primary-500 mr-2" />
+                  <DocumentTextIcon className="w-5 h-5 text-primary-500 mr-2" />
                   {category} ({results.length})
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -504,7 +504,7 @@ const LabResultsPage = () => {
               </div>
             ))
           ) : (
-            <Alert variant="info" message="No lab results match your current filters." />
+            <div className="text-center text-gray-500 py-8" style={{fontFamily: 'var(--font-body)'}}>No lab results match your current filters.</div>
           )}
         </div>
       )
@@ -528,7 +528,7 @@ const LabResultsPage = () => {
             <Button 
               variant="primary"
               onClick={handleAddResult}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 whitespace-nowrap"
             >
               <PlusIcon className="w-5 h-5" />
               <span>Add Result</span>
@@ -625,7 +625,7 @@ const LabResultsPage = () => {
           <Card className="text-center py-12">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BeakerIcon className="w-8 h-8 text-neutral-400" />
+                <DocumentTextIcon className="w-8 h-8 text-neutral-400" />
               </div>
               <h3 className="text-lg font-semibold text-neutral-900 mb-2">
                 {searchQuery || statusFilter !== 'all' || dateFilter !== 'all' 
@@ -655,7 +655,7 @@ const LabResultsPage = () => {
           title="Add Lab Result"
           size="lg"
         >
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -857,7 +857,7 @@ const LabResultsPage = () => {
           size="lg"
         >
           {selectedResult && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-neutral-700">Test Name</label>
@@ -1000,7 +1000,7 @@ const LabResultsPage = () => {
           size="lg"
         >
           {editingResult && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">

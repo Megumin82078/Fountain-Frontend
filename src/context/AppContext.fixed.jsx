@@ -1,22 +1,10 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { STORAGE_KEYS } from '../constants';
-import { validateStoredProfile } from '../utils/profileValidator';
 
 // Starting state for the whole app
-// Safe localStorage access
-const getStoredToken = () => {
-  try {
-    return typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
-  } catch (error) {
-    console.error('Error accessing localStorage:', error);
-    return null;
-  }
-};
-
 const initialState = {
   auth: {
     user: null,
-    token: getStoredToken(),
+    token: localStorage.getItem('fountain_token'),
     isAuthenticated: false,
     loading: false
   },
@@ -120,20 +108,24 @@ const appReducer = (state, action) => {
       };
       
     case ActionTypes.LOGIN_SUCCESS:
+      console.log('✅ Reducer: LOGIN_SUCCESS called with payload:', action.payload);
+      const newAuthState = {
+        user: action.payload.user,
+        token: action.payload.token,
+        isAuthenticated: true,
+        loading: false
+      };
+      console.log('✅ Reducer: New auth state:', newAuthState);
       return {
         ...state,
-        auth: {
-          user: action.payload.user,
-          token: action.payload.token,
-          isAuthenticated: true,
-          loading: false
-        }
+        auth: newAuthState
       };
       
     case ActionTypes.LOGIN_FAILURE:
       return {
         ...state,
         auth: {
+          ...state.auth,
           user: null,
           token: null,
           isAuthenticated: false,
@@ -142,33 +134,21 @@ const appReducer = (state, action) => {
       };
       
     case ActionTypes.LOGOUT:
+      // Clear auth tokens from storage
       localStorage.removeItem('fountain_token');
+      localStorage.removeItem('fountain_user');
       return {
-        ...state,
-        auth: {
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          loading: false
-        },
-        healthData: initialState.healthData,
-        providers: initialState.providers,
-        requests: initialState.requests,
-        alerts: initialState.alerts
+        ...initialState,
+        ui: state.ui // Keep UI preferences
       };
       
     case ActionTypes.SET_USER:
       return {
         ...state,
-        auth: {
-          ...state.auth,
-          user: action.payload,
-          isAuthenticated: true,
-          loading: false
-        }
+        auth: { ...state.auth, user: action.payload }
       };
       
-    // Health record updates
+    // Health data management
     case ActionTypes.SET_HEALTH_DATA_LOADING:
       return {
         ...state,
@@ -197,6 +177,13 @@ const appReducer = (state, action) => {
         }
       };
       
+    case ActionTypes.CLEAR_HEALTH_DATA:
+      return {
+        ...state,
+        healthData: initialState.healthData
+      };
+      
+    // Conditions
     case ActionTypes.ADD_CONDITION:
       return {
         ...state,
@@ -206,34 +193,6 @@ const appReducer = (state, action) => {
         }
       };
       
-    case ActionTypes.ADD_MEDICATION:
-      return {
-        ...state,
-        healthData: {
-          ...state.healthData,
-          medications: [...state.healthData.medications, action.payload]
-        }
-      };
-      
-    case ActionTypes.ADD_LAB_RESULT:
-      return {
-        ...state,
-        healthData: {
-          ...state.healthData,
-          labs: [...state.healthData.labs, action.payload]
-        }
-      };
-      
-    case ActionTypes.ADD_VITAL:
-      return {
-        ...state,
-        healthData: {
-          ...state.healthData,
-          vitals: [...state.healthData.vitals, action.payload]
-        }
-      };
-
-    // Edit actions
     case ActionTypes.EDIT_CONDITION:
       return {
         ...state,
@@ -244,18 +203,56 @@ const appReducer = (state, action) => {
           )
         }
       };
-
+      
+    case ActionTypes.DELETE_CONDITION:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          conditions: state.healthData.conditions.filter(condition => condition.id !== action.payload)
+        }
+      };
+      
+    // Medications
+    case ActionTypes.ADD_MEDICATION:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          medications: [...state.healthData.medications, action.payload]
+        }
+      };
+      
     case ActionTypes.EDIT_MEDICATION:
       return {
         ...state,
         healthData: {
           ...state.healthData,
-          medications: state.healthData.medications.map(medication =>
-            medication.id === action.payload.id ? action.payload : medication
+          medications: state.healthData.medications.map(med =>
+            med.id === action.payload.id ? action.payload : med
           )
         }
       };
-
+      
+    case ActionTypes.DELETE_MEDICATION:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          medications: state.healthData.medications.filter(med => med.id !== action.payload)
+        }
+      };
+      
+    // Lab results
+    case ActionTypes.ADD_LAB_RESULT:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          labs: [...state.healthData.labs, action.payload]
+        }
+      };
+      
     case ActionTypes.EDIT_LAB_RESULT:
       return {
         ...state,
@@ -266,7 +263,26 @@ const appReducer = (state, action) => {
           )
         }
       };
-
+      
+    case ActionTypes.DELETE_LAB_RESULT:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          labs: state.healthData.labs.filter(lab => lab.id !== action.payload)
+        }
+      };
+      
+    // Vitals
+    case ActionTypes.ADD_VITAL:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          vitals: [...state.healthData.vitals, action.payload]
+        }
+      };
+      
     case ActionTypes.EDIT_VITAL:
       return {
         ...state,
@@ -277,35 +293,7 @@ const appReducer = (state, action) => {
           )
         }
       };
-
-    // Delete actions
-    case ActionTypes.DELETE_CONDITION:
-      return {
-        ...state,
-        healthData: {
-          ...state.healthData,
-          conditions: state.healthData.conditions.filter(condition => condition.id !== action.payload)
-        }
-      };
-
-    case ActionTypes.DELETE_MEDICATION:
-      return {
-        ...state,
-        healthData: {
-          ...state.healthData,
-          medications: state.healthData.medications.filter(medication => medication.id !== action.payload)
-        }
-      };
-
-    case ActionTypes.DELETE_LAB_RESULT:
-      return {
-        ...state,
-        healthData: {
-          ...state.healthData,
-          labs: state.healthData.labs.filter(lab => lab.id !== action.payload)
-        }
-      };
-
+      
     case ActionTypes.DELETE_VITAL:
       return {
         ...state,
@@ -314,7 +302,8 @@ const appReducer = (state, action) => {
           vitals: state.healthData.vitals.filter(vital => vital.id !== action.payload)
         }
       };
-
+      
+    // Procedures
     case ActionTypes.ADD_PROCEDURE:
       return {
         ...state,
@@ -323,34 +312,28 @@ const appReducer = (state, action) => {
           procedures: [...state.healthData.procedures, action.payload]
         }
       };
-
+      
     case ActionTypes.EDIT_PROCEDURE:
       return {
         ...state,
         healthData: {
           ...state.healthData,
-          procedures: state.healthData.procedures.map(procedure =>
-            procedure.id === action.payload.id ? action.payload : procedure
+          procedures: state.healthData.procedures.map(proc =>
+            proc.id === action.payload.id ? action.payload : proc
           )
         }
       };
-
+      
     case ActionTypes.DELETE_PROCEDURE:
       return {
         ...state,
         healthData: {
           ...state.healthData,
-          procedures: state.healthData.procedures.filter(procedure => procedure.id !== action.payload)
+          procedures: state.healthData.procedures.filter(proc => proc.id !== action.payload)
         }
       };
       
-    case ActionTypes.CLEAR_HEALTH_DATA:
-      return {
-        ...state,
-        healthData: initialState.healthData
-      };
-      
-    // Provider/facility updates
+    // Providers & facilities
     case ActionTypes.SET_PROVIDERS_LOADING:
       return {
         ...state,
@@ -360,16 +343,24 @@ const appReducer = (state, action) => {
     case ActionTypes.SET_PROVIDERS:
       return {
         ...state,
-        providers: { ...state.providers, list: action.payload, loading: false }
+        providers: {
+          ...state.providers,
+          list: action.payload,
+          loading: false
+        }
       };
       
     case ActionTypes.SET_FACILITIES:
       return {
         ...state,
-        providers: { ...state.providers, facilities: action.payload, loading: false }
+        providers: {
+          ...state.providers,
+          facilities: action.payload,
+          loading: false
+        }
       };
       
-    // Medical record request tracking
+    // Request batches
     case ActionTypes.SET_REQUESTS_LOADING:
       return {
         ...state,
@@ -379,16 +370,23 @@ const appReducer = (state, action) => {
     case ActionTypes.SET_REQUEST_BATCHES:
       return {
         ...state,
-        requests: { ...state.requests, batches: action.payload, loading: false }
+        requests: {
+          ...state.requests,
+          batches: action.payload,
+          loading: false
+        }
       };
       
     case ActionTypes.SET_ACTIVE_REQUEST:
       return {
         ...state,
-        requests: { ...state.requests, activeRequest: action.payload }
+        requests: {
+          ...state.requests,
+          activeRequest: action.payload
+        }
       };
       
-    // Reminder management
+    // Alerts & reminders
     case ActionTypes.SET_ALERTS_LOADING:
       return {
         ...state,
@@ -396,70 +394,71 @@ const appReducer = (state, action) => {
       };
       
     case ActionTypes.SET_ALERTS:
+      const unreadCount = action.payload.filter(alert => 
+        alert.status === 'active' || alert.status === 'unread'
+      ).length;
+      
       return {
         ...state,
         alerts: {
           ...state.alerts,
           list: action.payload,
-          loading: false,
-          unreadCount: action.payload.filter(alert => alert.status === 'unread').length
+          unreadCount,
+          loading: false
+        }
+      };
+      
+    case ActionTypes.SET_UNREAD_COUNT:
+      return {
+        ...state,
+        alerts: {
+          ...state.alerts,
+          unreadCount: action.payload
         }
       };
       
     case ActionTypes.MARK_ALERT_READ:
-      console.log('Reducer: MARK_ALERT_READ called with payload:', action.payload);
-      console.log('Current alerts list:', state.alerts.list);
-      const updatedState = {
+      return {
         ...state,
         alerts: {
           ...state.alerts,
           list: state.alerts.list.map(alert =>
-            alert.id === action.payload
-              ? { ...alert, status: 'read' }
+            alert.id === action.payload 
+              ? { ...alert, status: 'acknowledged' }
               : alert
           ),
-          unreadCount: state.alerts.list.filter(alert => 
-            alert.id === action.payload && alert.status === 'unread'
-          ).length > 0 ? Math.max(0, state.alerts.unreadCount - 1) : state.alerts.unreadCount
+          unreadCount: Math.max(0, state.alerts.unreadCount - 1)
         }
       };
-      console.log('New state alerts:', updatedState.alerts.list);
-      return updatedState;
-    
+      
     case ActionTypes.MARK_ALERT_UNREAD:
       return {
         ...state,
         alerts: {
           ...state.alerts,
           list: state.alerts.list.map(alert =>
-            alert.id === action.payload
-              ? { ...alert, status: 'unread' }
+            alert.id === action.payload 
+              ? { ...alert, status: 'active' }
               : alert
           ),
-          unreadCount: state.alerts.list.filter(alert => 
-            alert.id === action.payload && alert.status !== 'unread'
-          ).length > 0 ? state.alerts.unreadCount + 1 : state.alerts.unreadCount
+          unreadCount: state.alerts.unreadCount + 1
         }
       };
-    
+      
     case ActionTypes.DELETE_ALERT:
-      const alertToDelete = state.alerts.list.find(alert => alert.id === action.payload);
+      const alertToDelete = state.alerts.list.find(a => a.id === action.payload);
+      const wasUnread = alertToDelete && (alertToDelete.status === 'active' || alertToDelete.status === 'unread');
+      
       return {
         ...state,
         alerts: {
           ...state.alerts,
           list: state.alerts.list.filter(alert => alert.id !== action.payload),
-          unreadCount: alertToDelete?.status === 'unread' 
-            ? Math.max(0, state.alerts.unreadCount - 1) 
-            : state.alerts.unreadCount
+          unreadCount: wasUnread ? Math.max(0, state.alerts.unreadCount - 1) : state.alerts.unreadCount
         }
       };
-    
-    case ActionTypes.UPDATE_ALERT_STATUS:
-      const previousAlert = state.alerts.list.find(alert => alert.id === action.payload.id);
-      const wasUnread = previousAlert?.status === 'unread';
-      const isNowUnread = action.payload.status === 'unread';
       
+    case ActionTypes.UPDATE_ALERT_STATUS:
       return {
         ...state,
         alerts: {
@@ -468,16 +467,11 @@ const appReducer = (state, action) => {
             alert.id === action.payload.id
               ? { ...alert, status: action.payload.status }
               : alert
-          ),
-          unreadCount: wasUnread && !isNowUnread 
-            ? Math.max(0, state.alerts.unreadCount - 1)
-            : !wasUnread && isNowUnread 
-            ? state.alerts.unreadCount + 1
-            : state.alerts.unreadCount
+          )
         }
       };
       
-    // UI stuff like sidebar and theme
+    // UI management
     case ActionTypes.TOGGLE_SIDEBAR:
       return {
         ...state,
@@ -490,12 +484,12 @@ const appReducer = (state, action) => {
         ui: { ...state.ui, theme: action.payload }
       };
       
+    // Dashboard refresh
     case ActionTypes.REFRESH_DASHBOARD_DATA:
       return {
         ...state,
         healthData: {
           ...state.healthData,
-          loading: true,
           lastUpdated: new Date().toISOString()
         }
       };
@@ -503,10 +497,9 @@ const appReducer = (state, action) => {
     case ActionTypes.CLEAR_ALL_HEALTH_DATA:
       return {
         ...state,
-        healthData: {
-          ...initialState.healthData,
-          lastUpdated: new Date().toISOString()
-        }
+        healthData: initialState.healthData,
+        alerts: initialState.alerts,
+        requests: initialState.requests
       };
       
     default:
@@ -517,78 +510,42 @@ const appReducer = (state, action) => {
 // Create the context
 const AppContext = createContext();
 
-// Provider wrapper for the whole app
+// Provider component that wraps the app
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Check if user was logged in before and validate token
+  // Check for saved auth on app load
   useEffect(() => {
-    const initializeAuth = async () => {
-      console.log('🔄 AppContext: Initializing auth state...');
-      // Set loading to true while checking auth
-      dispatch({ type: ActionTypes.SET_AUTH_LOADING, payload: true });
-      
-      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-      const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-      
-      console.log('🔍 AppContext: Token exists:', !!token);
-      console.log('🔍 AppContext: User data exists:', !!userData);
-      
-      if (token && userData) {
-        try {
-          const user = JSON.parse(userData);
-          console.log('✅ AppContext: Parsed user data:', user);
-          
-          // Immediately restore auth state for better UX
-          dispatch({
-            type: ActionTypes.LOGIN_SUCCESS,
-            payload: {
-              token,
-              user
-            }
-          });
-          console.log('✅ AppContext: LOGIN_SUCCESS dispatched');
-          
-          // Validate profile in background (simplified to avoid circular deps)
-          const freshProfile = await validateStoredProfile(token);
-          if (freshProfile) {
-            dispatch({
-              type: ActionTypes.SET_USER,
-              payload: freshProfile
-            });
-            localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(freshProfile));
-            console.log('✅ AppContext: User profile refreshed');
-          }
-        } catch (error) {
-          console.error('❌ AppContext: Error parsing stored user data:', error);
-          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-          // Set loading to false on error
-          dispatch({ type: ActionTypes.SET_AUTH_LOADING, payload: false });
-        }
-      } else {
-        console.log('⚠️ AppContext: No stored auth data');
-        // Set loading to false when no auth data exists
-        dispatch({ type: ActionTypes.SET_AUTH_LOADING, payload: false });
+    const token = localStorage.getItem('fountain_token');
+    const savedUser = localStorage.getItem('fountain_user');
+    
+    if (token && savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        dispatch({
+          type: ActionTypes.LOGIN_SUCCESS,
+          payload: { token, user }
+        });
+      } catch (error) {
+        console.error('Failed to restore auth session:', error);
+        localStorage.removeItem('fountain_token');
+        localStorage.removeItem('fountain_user');
       }
-    };
-
-    initializeAuth();
+    }
   }, []);
 
-  // Listen for profile updates from background fetches
+  // Save auth changes to localStorage
   useEffect(() => {
-    const handleProfileUpdate = (event) => {
-      console.log('📨 AppContext: Received profile update:', event.detail);
-      dispatch({
-        type: ActionTypes.SET_USER,
-        payload: event.detail
-      });
-    };
-
-    window.addEventListener('profileUpdated', handleProfileUpdate);
-    return () => window.removeEventListener('profileUpdated', handleProfileUpdate);
-  }, []);
+    if (state.auth.isAuthenticated && state.auth.token) {
+      localStorage.setItem('fountain_token', state.auth.token);
+      if (state.auth.user) {
+        localStorage.setItem('fountain_user', JSON.stringify(state.auth.user));
+      }
+    } else {
+      localStorage.removeItem('fountain_token');
+      localStorage.removeItem('fountain_user');
+    }
+  }, [state.auth]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
@@ -597,11 +554,11 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-// Hook to access state and dispatch from anywhere
+// Hook to use the app context
 export const useApp = () => {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error('useApp must be used within an AppProvider');
+    throw new Error('useApp must be used within AppProvider');
   }
   return context;
 };

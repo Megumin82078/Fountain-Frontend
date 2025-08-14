@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import { ActionTypes } from '../../context/AppContext';
+import apiService from '../../services/api';
 
 import { 
   Button, 
@@ -35,10 +36,53 @@ const RequestTrackingPage = () => {
     const fetchRequestDetails = async () => {
       setLoading(true);
       try {
-        // TODO: replace with real API
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Try to get request from backend if it's a UUID
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId);
         
-        // Using fake data for now
+        if (isUUID) {
+          try {
+            const batchData = await apiService.getRequestBatch(requestId);
+            const timelineData = await apiService.getRequestBatchTimeline(requestId);
+            
+            // Transform backend data to match UI format
+            const transformedRequest = {
+              id: batchData.id,
+              trackingNumber: batchData.tracking_number || `REQ-${batchData.id.slice(0, 8).toUpperCase()}`,
+              title: batchData.title || "Medical Records Request",
+              description: batchData.description || "Medical records request",
+              status: batchData.status || "pending",
+              priority: batchData.priority || "medium",
+              requestType: batchData.request_type || "complete_records",
+              targetProvider: batchData.provider?.name || batchData.provider_name || "Unknown Provider",
+              requestedBy: batchData.patient_name || state.auth.user?.name || "Patient",
+              createdDate: batchData.created_at || new Date().toISOString(),
+              dueDate: batchData.due_date || calculateDueDate(batchData.priority),
+              estimatedCompletion: batchData.estimated_completion || getEstimatedCompletion(batchData.request_type),
+              progress: calculateProgress(batchData.status),
+              recordTypes: batchData.record_types || ['medical_records'],
+              contactInfo: {
+                name: batchData.provider?.contact_name || "Medical Records Department",
+                phone: batchData.provider?.contact_phone || "(555) 123-4567",
+                email: batchData.provider?.contact_email || "records@provider.com"
+              },
+              notes: batchData.notes || "",
+              documents: transformDocuments(batchData.documents || [])
+            };
+            
+            setRequest(transformedRequest);
+            
+            // Transform timeline data
+            const transformedTimeline = transformTimeline(timelineData || [], batchData);
+            setTrackingHistory(transformedTimeline);
+            setLoading(false);
+            return;
+          } catch (error) {
+            console.error('Failed to fetch request from backend:', error);
+            // Fall through to mock data
+          }
+        }
+        
+        // Using fake data for non-UUID or failed requests
         const mockRequest = {
           id: requestId,
           trackingNumber: `REQ-${requestId?.toUpperCase()}`,
@@ -123,6 +167,129 @@ const RequestTrackingPage = () => {
       fetchRequestDetails();
     }
   }, [requestId, state.auth.user]);
+  
+  // Helper function to calculate progress based on status
+  const calculateProgress = (status) => {
+    const progressMap = {
+      'pending': 0,
+      'submitted': 15,
+      'acknowledged': 30,
+      'processing': 50,
+      'in_progress': 65,
+      'review': 80,
+      'completed': 100,
+      'cancelled': 0,
+      'failed': 0
+    };
+    return progressMap[status] || 0;
+  };
+  
+  // Helper function to calculate due date
+  const calculateDueDate = (priority) => {
+    const date = new Date();
+    const daysToAdd = priority === 'urgent' ? 3 : priority === 'high' ? 7 : 14;
+    date.setDate(date.getDate() + daysToAdd);
+    return date.toISOString();
+  };
+  
+  // Helper function to get estimated completion
+  const getEstimatedCompletion = (requestType) => {
+    const completionMap = {
+      'complete_records': '3-5 business days',
+      'specific_records': '2-3 business days',
+      'lab_results': '1-2 business days',
+      'imaging': '2-4 business days',
+      'consultation_notes': '3-5 business days'
+    };
+    return completionMap[requestType] || '3-5 business days';
+  };
+  
+  // Helper function to transform documents
+  const transformDocuments = (documents) => {
+    if (!documents || documents.length === 0) {
+      return [
+        { name: "Authorization Form", status: "pending", date: null },
+        { name: "Identity Verification", status: "pending", date: null },
+        { name: "Records Processing", status: "pending", date: null },
+        { name: "Quality Review", status: "pending", date: null },
+        { name: "Final Delivery", status: "pending", date: null }
+      ];
+    }
+    return documents.map(doc => ({
+      name: doc.name || doc.document_type || "Document",
+      status: doc.status || "pending",
+      date: doc.uploaded_at || doc.created_at || null
+    }));
+  };
+  
+  // Helper function to transform timeline data
+  const transformTimeline = (timeline, batchData) => {
+    if (!timeline || timeline.length === 0) {
+      // Create default timeline based on batch status
+      const defaultTimeline = [
+        {
+          id: 1,
+          status: "submitted",
+          title: "Request Submitted",
+          description: `Your request has been submitted and assigned tracking number ${batchData.tracking_number || 'REQ-' + batchData.id?.slice(0, 8).toUpperCase()}`,
+          timestamp: batchData.created_at || new Date().toISOString(),
+          icon: DocumentIcon,
+          variant: "info"
+        }
+      ];
+      
+      if (batchData.status !== 'pending') {
+        defaultTimeline.push({
+          id: 2,
+          status: "acknowledged",
+          title: "Request Acknowledged",
+          description: `${batchData.provider?.name || 'Provider'} has received and acknowledged your request`,
+          timestamp: batchData.acknowledged_at || new Date().toISOString(),
+          icon: CheckCircleIcon,
+          variant: "success"
+        });
+      }
+      
+      return defaultTimeline;
+    }
+    
+    // Transform actual timeline data
+    return timeline.map((event, index) => ({
+      id: event.id || index + 1,
+      status: event.status || event.event_type || "info",
+      title: event.title || event.event_name || "Status Update",
+      description: event.description || event.event_description || "",
+      timestamp: event.timestamp || event.created_at || new Date().toISOString(),
+      icon: getEventIcon(event.event_type || event.status),
+      variant: getEventVariant(event.event_type || event.status)
+    }));
+  };
+  
+  // Helper function to get icon for timeline event
+  const getEventIcon = (eventType) => {
+    const iconMap = {
+      'submitted': DocumentIcon,
+      'acknowledged': CheckCircleIcon,
+      'processing': ClockIcon,
+      'completed': CheckCircleIcon,
+      'failed': ExclamationTriangleIcon,
+      'info': InformationCircleIcon
+    };
+    return iconMap[eventType] || InformationCircleIcon;
+  };
+  
+  // Helper function to get variant for timeline event
+  const getEventVariant = (eventType) => {
+    const variantMap = {
+      'submitted': 'info',
+      'acknowledged': 'success',
+      'processing': 'info',
+      'completed': 'success',
+      'failed': 'error',
+      'cancelled': 'warning'
+    };
+    return variantMap[eventType] || 'info';
+  };
 
   const getStatusVariant = (status) => {
     switch (status) {
@@ -203,7 +370,7 @@ const RequestTrackingPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/requests')}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 whitespace-nowrap"
               >
                 <ArrowLeftIcon className="w-4 h-4" />
                 <span>Back to Requests</span>
@@ -238,7 +405,7 @@ const RequestTrackingPage = () => {
                   </h2>
                   <p className="text-neutral-600">{request.description}</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 whitespace-nowrap">
                   <Badge variant={getStatusVariant(request.status)}>
                     {request.status.replace('_', ' ')}
                   </Badge>
@@ -462,12 +629,6 @@ const RequestTrackingPage = () => {
               </div>
             </Card>
 
-            {/* Help info */}
-            <Alert
-              variant="info"
-              title="Need Help?"
-              message="If you have questions about your request or need to make changes, please contact the medical records department using the information provided."
-            />
           </div>
         </div>
       </div>

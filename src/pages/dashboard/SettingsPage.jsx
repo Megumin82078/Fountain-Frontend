@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import { Card } from '../../components/common';
+import toast from '../../utils/toast';
 
 const SettingsPage = () => {
   const { state } = useApp();
@@ -58,17 +59,17 @@ const SettingsPage = () => {
 
   const handleSave = () => {
     // Save settings logic would go here
-    alert('Settings saved successfully!');
+    toast.success('Settings saved successfully!');
   };
 
   return (
     <AppLayout>
       <div className="content-container">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-black mb-2" style={{fontFamily: 'var(--font-display)'}}>
+          <h1 className="text-3xl font-bold text-black mb-2">
             Settings
           </h1>
-          <p className="text-gray-600 font-medium" style={{fontFamily: 'var(--font-body)'}}>
+          <p className="text-gray-600 font-medium">
             Manage your account preferences and privacy settings
           </p>
         </div>
@@ -80,10 +81,10 @@ const SettingsPage = () => {
               {Object.entries(settings.notifications).map(([key, value]) => (
                 <div key={key} className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-900" style={{fontFamily: 'var(--font-body)'}}>
+                    <p className="text-sm font-medium text-gray-900">
                       {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                     </p>
-                    <p className="text-xs text-gray-500" style={{fontFamily: 'var(--font-body)'}}>
+                    <p className="text-xs text-gray-500">
                       {key === 'email' && 'Receive notifications via email'}
                       {key === 'push' && 'Receive push notifications on your device'}
                       {key === 'healthAlerts' && 'Get notified about important health alerts'}
@@ -111,10 +112,10 @@ const SettingsPage = () => {
               {Object.entries(settings.privacy).map(([key, value]) => (
                 <div key={key} className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-900" style={{fontFamily: 'var(--font-body)'}}>
+                    <p className="text-sm font-medium text-gray-900">
                       {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                     </p>
-                    <p className="text-xs text-gray-500" style={{fontFamily: 'var(--font-body)'}}>
+                    <p className="text-xs text-gray-500">
                       {key === 'shareWithProviders' && 'Allow healthcare providers to access your records'}
                       {key === 'allowDataAnalytics' && 'Help improve our services with anonymous data'}
                       {key === 'showInSearch' && 'Make your profile discoverable by providers'}
@@ -138,14 +139,13 @@ const SettingsPage = () => {
           <Card title="General Preferences" className="h-fit">
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Theme
                 </label>
                 <select
                   value={settings.preferences.theme}
                   onChange={(e) => handlePreferenceChange('theme', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                  style={{fontFamily: 'var(--font-body)'}}
                 >
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
@@ -154,14 +154,13 @@ const SettingsPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Language
                 </label>
                 <select
                   value={settings.preferences.language}
                   onChange={(e) => handlePreferenceChange('language', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                  style={{fontFamily: 'var(--font-body)'}}
                 >
                   <option value="en">English</option>
                   <option value="es">Spanish</option>
@@ -171,14 +170,13 @@ const SettingsPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2" style={{fontFamily: 'var(--font-body)'}}>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Date Format
                 </label>
                 <select
                   value={settings.preferences.dateFormat}
                   onChange={(e) => handlePreferenceChange('dateFormat', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                  style={{fontFamily: 'var(--font-body)'}}
                 >
                   <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                   <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -191,13 +189,13 @@ const SettingsPage = () => {
           {/* Account Actions */}
           <Card title="Account Actions" className="h-fit">
             <div className="space-y-4">
-              <button className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors" style={{fontFamily: 'var(--font-body)'}}>
+              <button className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 Export My Data
               </button>
-              <button className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors" style={{fontFamily: 'var(--font-body)'}}>
+              <button className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 Download Medical Records
               </button>
-              <button className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors" style={{fontFamily: 'var(--font-body)'}}>
+              <button className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                 Delete Account
               </button>
             </div>
@@ -209,7 +207,6 @@ const SettingsPage = () => {
           <button
             onClick={handleSave}
             className="px-6 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
-            style={{fontFamily: 'var(--font-body)'}}
           >
             Save Changes
           </button>

@@ -69,7 +69,7 @@ const Modal = ({
       className={clsx(
         'fixed inset-0 z-50 overflow-y-auto',
         'bg-black bg-opacity-50 backdrop-blur-sm',
-        'flex items-center justify-center p-4',
+        'flex items-start justify-center min-h-screen p-4 py-12',
         'animate-fade-in',
         overlayClassName
       )}
@@ -78,14 +78,16 @@ const Modal = ({
     >
       <div className={clsx(
         'relative bg-white rounded-xl shadow-elegant-lg',
-        'w-full mx-auto',
+        'w-full mx-auto my-auto',
         'animate-scale-in',
+        'max-h-[calc(100vh-6rem)]',
+        'flex flex-col',
         sizes[size],
         className
       )}>
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+          <div className="flex items-center justify-between p-6 border-b border-neutral-200 flex-shrink-0">
             {title && (
               <h3 className="text-lg font-semibold text-neutral-900">
                 {title}
@@ -107,10 +109,10 @@ const Modal = ({
 
         {/* Body */}
         <div className={clsx(
-          'p-6',
+          'p-6 overflow-y-auto flex-1',
           {
-            'pt-0': title || showCloseButton,
-            'pb-0': footer
+            'pt-6': !(title || showCloseButton),
+            'pb-6': !footer
           }
         )}>
           {children}
@@ -118,7 +120,7 @@ const Modal = ({
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 bg-neutral-50 border-t border-neutral-200 rounded-b-xl">
+          <div className="px-6 py-4 bg-neutral-50 border-t border-neutral-200 rounded-b-xl flex-shrink-0">
             {footer}
           </div>
         )}

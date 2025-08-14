@@ -6,11 +6,15 @@ class ProviderService {
   async getProviders() {
     try {
       const providers = await apiService.getProviders();
+      // Return empty array if no providers, not mock data
+      if (!providers || !Array.isArray(providers)) {
+        return [];
+      }
       return providers.map(p => this.transformBackendProvider(p));
     } catch (error) {
       console.error('Error fetching providers:', error);
-      // Return mock data for development
-      return this.getMockProviders();
+      // Return empty array instead of mock data
+      return [];
     }
   }
 
@@ -22,9 +26,8 @@ class ProviderService {
       return provider ? this.transformBackendProvider(provider) : null;
     } catch (error) {
       console.error('Error fetching provider:', error);
-      // Return mock data for development
-      const providers = this.getMockProviders();
-      return providers.find(p => p.id === providerId);
+      // Return null instead of mock data
+      return null;
     }
   }
 
@@ -59,14 +62,8 @@ class ProviderService {
       return this.transformBackendProvider(provider);
     } catch (error) {
       console.error('Error creating provider:', error);
-      // Mock creation for development
-      const newProvider = {
-        id: `prov-${Date.now()}`,
-        ...providerData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      return newProvider;
+      // Throw error instead of returning mock data
+      throw new Error(error.message || 'Failed to create provider');
     }
   }
 

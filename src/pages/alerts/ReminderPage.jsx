@@ -3,7 +3,7 @@ import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import apiService from '../../services/api';
 import { AlertSeverity, AlertStatus } from '../../types/api';
-import { useNotifications } from '../../hooks/useNotifications';
+import toast from '../../utils/toast';
 import { 
   Button, 
   Card, 
@@ -11,10 +11,10 @@ import {
   Input,
   Select,
   Badge, 
-  Alert,
   Modal,
-  Tabs,
-  LoadingSpinner
+  ConfirmModal,
+  LoadingSpinner,
+  EmptyState
 } from '../../components/common';
 import { 
   BellIcon,
@@ -22,8 +22,6 @@ import {
   ExclamationTriangleIcon,
   InformationCircleIcon,
   CheckCircleIcon,
-  XMarkIcon,
-  ClockIcon,
   HeartIcon,
   BeakerIcon,
   CalendarIcon,
@@ -34,7 +32,6 @@ import {
 
 const ReminderPage = () => {
   const { user } = useApp();
-  const { showSuccess, showError } = useNotifications();
   
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +41,8 @@ const ReminderPage = () => {
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingAlertId, setDeletingAlertId] = useState(null);
   const [newAlert, setNewAlert] = useState({
     alert_type: 'health',
     severity: AlertSeverity.MEDIUM,
@@ -63,7 +62,7 @@ const ReminderPage = () => {
       setAlerts(alertsData || []);
     } catch (error) {
       console.error('Error loading alerts:', error);
-      showError('Failed to load reminders');
+      toast.error('Failed to load reminders. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -148,7 +147,7 @@ const ReminderPage = () => {
 
   const handleCreateAlert = async () => {
     if (!newAlert.title || !newAlert.message) {
-      showError('Please fill in all required fields');
+      toast.warning('Please fill in both title and message fields');
       return;
     }
 
@@ -177,11 +176,11 @@ const ReminderPage = () => {
       
       // Save to backend
       await apiService.createAlert(alertData);
-      showSuccess('Reminder created successfully!');
+      toast.success('Reminder created successfully!');
     } catch (error) {
       // If failed, reload from server
       await loadAlerts();
-      showError('Failed to create reminder');
+      toast.error('Failed to create reminder. Please try again.');
       console.error('Error creating alert:', error);
     }
   };
@@ -204,11 +203,11 @@ const ReminderPage = () => {
       
       // Save changes to backend
       await apiService.updateAlert(alertId, { status: 'read' });
-      showSuccess('Reminder marked as read');
+      toast.success('Reminder marked as read');
     } catch (error) {
       // If failed, reload from server
       await loadAlerts();
-      showError('Failed to update reminder');
+      toast.error('Failed to update reminder status');
       console.error('Error updating alert:', error);
     }
   };
@@ -219,22 +218,30 @@ const ReminderPage = () => {
     return status;
   };
 
-  const handleDeleteAlert = async (alertId) => {
-    if (!window.confirm('Are you sure you want to delete this reminder?')) return;
+  const handleDeleteAlert = (alertId) => {
+    setDeletingAlertId(alertId);
+    setShowDeleteConfirm(true);
+  };
 
+  const confirmDeleteAlert = async () => {
+    if (!deletingAlertId) return;
+    
     try {
       // Remove from list right away
-      setAlerts(prevAlerts => prevAlerts.filter(alert => alert.id !== alertId));
+      setAlerts(prevAlerts => prevAlerts.filter(alert => alert.id !== deletingAlertId));
       setShowDetailsModal(false);
+      setShowDeleteConfirm(false);
       
       // Save to backend
-      await apiService.deleteAlert(alertId);
-      showSuccess('Reminder deleted successfully!');
+      await apiService.deleteAlert(deletingAlertId);
+      toast.success('Reminder deleted successfully!');
     } catch (error) {
       // If failed, reload from server
       await loadAlerts();
-      showError('Failed to delete reminder');
+      toast.error('Failed to delete reminder. Please try again.');
       console.error('Error deleting alert:', error);
+    } finally {
+      setDeletingAlertId(null);
     }
   };
 
@@ -335,7 +342,7 @@ const ReminderPage = () => {
             <Button 
               variant="primary"
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 whitespace-nowrap"
             >
               <PlusIcon className="w-5 h-5" />
               <span>Create Reminder</span>
@@ -442,11 +449,17 @@ const ReminderPage = () => {
             )}
           </div>
         ) : (
-          <Alert
-            variant="info"
-            message={searchQuery || severityFilter !== 'all' || statusFilter !== 'all' 
-              ? "No reminders found matching your filters." 
-              : "No reminders yet. Create your first reminder to stay on track!"}
+          <EmptyState
+            icon={BellIcon}
+            title={searchQuery || severityFilter !== 'all' || statusFilter !== 'all' 
+              ? "No reminders found" 
+              : "No reminders yet"}
+            description={searchQuery || severityFilter !== 'all' || statusFilter !== 'all' 
+              ? "Try adjusting your filters to see more results." 
+              : "Create your first reminder to stay on track with your health tasks."}
+            actionLabel={!(searchQuery || severityFilter !== 'all' || statusFilter !== 'all') ? "Create Reminder" : null}
+            onAction={!(searchQuery || severityFilter !== 'all' || statusFilter !== 'all') ? () => setShowCreateModal(true) : null}
+            variant="default"
           />
         )}
 
@@ -457,12 +470,7 @@ const ReminderPage = () => {
           title="Create New Reminder"
           size="lg"
         >
-          <div className="space-y-6">
-            <Alert
-              variant="info"
-              message="Set up personalized reminders for medications, appointments, and health tasks."
-            />
-
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Reminder Type
@@ -528,7 +536,7 @@ const ReminderPage = () => {
           size="lg"
         >
           {selectedAlert && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className={`p-4 rounded-lg ${
                 selectedAlert.severity === AlertSeverity.CRITICAL ? 'bg-error-50' :
                 selectedAlert.severity === AlertSeverity.HIGH ? 'bg-error-50' :
@@ -564,7 +572,7 @@ const ReminderPage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-neutral-600 mb-1">Status</p>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 whitespace-nowrap">
                     {getStatusIcon(selectedAlert.status)}
                     <span className="font-medium">{getDisplayStatus(selectedAlert.status)}</span>
                   </div>
@@ -587,7 +595,7 @@ const ReminderPage = () => {
                 <Button
                   variant="outline"
                   onClick={() => handleDeleteAlert(selectedAlert.id)}
-                  className="text-error-600 hover:bg-error-50"
+                  className="text-error-600 hover:bg-error-50 hover:text-error-700 transition-colors"
                 >
                   Delete Reminder
                 </Button>
@@ -611,6 +619,21 @@ const ReminderPage = () => {
             </div>
           )}
         </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setDeletingAlertId(null);
+          }}
+          onConfirm={confirmDeleteAlert}
+          title="Delete Reminder"
+          message="Are you sure you want to delete this reminder? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+        />
       </div>
     </AppLayout>
   );
