@@ -82,23 +82,23 @@ const ProfilePage = () => {
     try {
       // Prepare profile data for API - only email and profile_json are accepted
       const profileData = {
-        email: editedProfile.personal.email,
+        email: editedProfile.personal.email || null,
         profile_json: {
-          name: `${editedProfile.personal.firstName} ${editedProfile.personal.lastName}`.trim(),
-          phone: editedProfile.personal.phone,
-          date_of_birth: editedProfile.personal.dateOfBirth,
-          sex: editedProfile.personal.gender,
-          blood_type: editedProfile.medical.bloodType,
-          height: editedProfile.medical.height,
-          weight: editedProfile.medical.weight,
-          allergies: editedProfile.medical.allergies,
-          current_medications: editedProfile.medical.medications,
-          medical_conditions: editedProfile.medical.conditions,
-          emergency_contact_name: editedProfile.emergency.contactName,
-          emergency_contact_phone: editedProfile.emergency.contactPhone,
-          emergency_contact_relationship: editedProfile.emergency.relationship,
-          primary_physician_name: editedProfile.emergency.physicianName,
-          primary_physician_phone: editedProfile.emergency.physicianPhone
+          name: `${editedProfile.personal.firstName} ${editedProfile.personal.lastName}`.trim() || null,
+          phone: editedProfile.personal.phone || null,
+          date_of_birth: editedProfile.personal.dateOfBirth || null,
+          sex: editedProfile.personal.gender || null,
+          blood_type: editedProfile.medical.bloodType || null,
+          height: editedProfile.medical.height ? parseFloat(editedProfile.medical.height) : null,
+          weight: editedProfile.medical.weight ? parseFloat(editedProfile.medical.weight) : null,
+          allergies: editedProfile.medical.allergies || null,
+          current_medications: editedProfile.medical.medications || null,
+          medical_conditions: editedProfile.medical.conditions || null,
+          emergency_contact_name: editedProfile.emergency.contactName || null,
+          emergency_contact_phone: editedProfile.emergency.contactPhone || null,
+          emergency_contact_relationship: editedProfile.emergency.relationship || null,
+          primary_physician_name: editedProfile.emergency.physicianName || null,
+          primary_physician_phone: editedProfile.emergency.physicianPhone || null
         }
       };
       

@@ -41,43 +41,53 @@ const RequestTrackingPage = () => {
         
         if (isUUID) {
           try {
+            console.log('Fetching request details for:', requestId);
             const batchData = await apiService.getRequestBatch(requestId);
-            const timelineData = await apiService.getRequestBatchTimeline(requestId);
+            console.log('Batch data received:', batchData);
+            
+            let timelineData = [];
+            try {
+              timelineData = await apiService.getRequestBatchTimeline(requestId);
+              console.log('Timeline data received:', timelineData);
+            } catch (timelineError) {
+              console.warn('Timeline fetch failed, using default timeline');
+            }
             
             // Transform backend data to match UI format
             const transformedRequest = {
               id: batchData.id,
               trackingNumber: batchData.tracking_number || `REQ-${batchData.id.slice(0, 8).toUpperCase()}`,
-              title: batchData.title || "Medical Records Request",
-              description: batchData.description || "Medical records request",
+              title: batchData.title || batchData.request_type || "Medical Records Request",
+              description: batchData.description || `${batchData.request_type || 'Medical records'} request`,
               status: batchData.status || "pending",
               priority: batchData.priority || "medium",
               requestType: batchData.request_type || "complete_records",
-              targetProvider: batchData.provider?.name || batchData.provider_name || "Unknown Provider",
-              requestedBy: batchData.patient_name || state.auth.user?.name || "Patient",
+              targetProvider: batchData.provider?.name || batchData.provider_name || "Healthcare Provider",
+              requestedBy: batchData.patient_name || batchData.patient?.name || state.auth.user?.name || "Patient",
               createdDate: batchData.created_at || new Date().toISOString(),
               dueDate: batchData.due_date || calculateDueDate(batchData.priority),
               estimatedCompletion: batchData.estimated_completion || getEstimatedCompletion(batchData.request_type),
               progress: calculateProgress(batchData.status),
-              recordTypes: batchData.record_types || ['medical_records'],
+              recordTypes: batchData.record_types || batchData.requested_records || ['medical_records'],
               contactInfo: {
-                name: batchData.provider?.contact_name || "Medical Records Department",
-                phone: batchData.provider?.contact_phone || "(555) 123-4567",
-                email: batchData.provider?.contact_email || "records@provider.com"
+                name: batchData.provider?.contact_name || batchData.contact_name || "Medical Records Department",
+                phone: batchData.provider?.contact_phone || batchData.contact_phone || "(555) 123-4567",
+                email: batchData.provider?.contact_email || batchData.contact_email || "records@provider.com"
               },
-              notes: batchData.notes || "",
-              documents: transformDocuments(batchData.documents || [])
+              notes: batchData.notes || batchData.additional_notes || "",
+              documents: transformDocuments(batchData.documents || batchData.files || [])
             };
             
             setRequest(transformedRequest);
             
             // Transform timeline data
-            const transformedTimeline = transformTimeline(timelineData || [], batchData);
+            const transformedTimeline = transformTimeline(timelineData, batchData);
             setTrackingHistory(transformedTimeline);
             setLoading(false);
             return;
           } catch (error) {
             console.error('Failed to fetch request from backend:', error);
+            console.error('Error details:', error.response?.data);
             // Fall through to mock data
           }
         }

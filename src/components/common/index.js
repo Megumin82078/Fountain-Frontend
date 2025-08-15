@@ -11,3 +11,4 @@ export { default as Badge, HealthStatusBadge, PriorityBadge, RequestStatusBadge 
 export { default as Tabs, VerticalTabs, TabPanel } from './Tabs';
 export { default as BackendStatus } from './BackendStatus';
 export { default as EmptyState } from './EmptyState';
+export { default as ErrorBoundary, ComponentErrorBoundary } from './ErrorBoundary';

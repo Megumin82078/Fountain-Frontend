@@ -3,23 +3,18 @@
 // In development, we use the Vite proxy to avoid CORS issues
 // In production, we use the direct API URL (assuming CORS is properly configured)
 export const getApiBaseUrl = () => {
-  // If we're in development mode (localhost), use the proxy
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return '/api';
-  }
+  // ALWAYS use Vite proxy in development to avoid CORS issues
+  // This is a temporary fix to ensure proxy is used
+  return '/api';
   
-  // Otherwise, use the environment variable or fallback
-  return import.meta.env.VITE_API_BASE_URL || 'https://fhfastapi.onrender.com';
+  // Original logic (commented out for debugging):
+  // if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  //   return '/api';
+  // }
+  // return import.meta.env.VITE_API_BASE_URL || 'https://fhfastapi.onrender.com';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
 
-// Log the configuration for debugging
-if (import.meta.env.VITE_DEBUG_MODE === 'true') {
-  console.log('API Configuration:', {
-    hostname: window.location.hostname,
-    isDevelopment: window.location.hostname === 'localhost',
-    apiBaseUrl: API_BASE_URL,
-    envApiUrl: import.meta.env.VITE_API_BASE_URL
-  });
-}
+// Always log the configuration for debugging during development
+console.log('🔧 API Configuration loaded - baseURL:', API_BASE_URL);

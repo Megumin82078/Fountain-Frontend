@@ -111,6 +111,7 @@ export const API_ENDPOINTS = {
   HEALTH_DATA_VITAL: (vitalId) => `/health-data/vitals/${vitalId}`,
   
   // Request Batches
+  REQUEST_BATCHES: '/request-batches', // For GET (list) and POST (create)
   REQUEST_BATCH: (batchId) => `/request-batches/${batchId}`,
   REQUEST_BATCH_TIMELINE: (batchId) => `/request-batches/${batchId}/timeline`,
   REQUEST_BATCH_TIMELINE_EVENT: (batchId, eventId) => `/request-batches/${batchId}/timeline/${eventId}`,
@@ -126,6 +127,7 @@ export const API_ENDPOINTS = {
   // Providers & Facilities
   PROVIDERS: '/provider',
   PROVIDER: (providerId) => `/provider/${providerId}`,
+  PROVIDER_SEARCH: '/provider/search', // For public provider directory (when available)
   FACILITIES: '/facilities',
   FACILITY: (facilityId) => `/facilities/${facilityId}`,
   ATTACH_PROVIDER: (facilityId, providerId) => `/facilities/${facilityId}/providers/${providerId}`,

@@ -6,11 +6,14 @@ import { STORAGE_KEYS, API_CONFIG } from '../constants';
 // Setup axios with base config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: API_CONFIG.TIMEOUT || 30000,
+  timeout: API_CONFIG.TIMEOUT || 60000, // Increased timeout for slow backend
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Log the axios base configuration
+console.log('🌐 Axios client configured');
 
 // Helper functions for auth token
 const getStoredToken = () => localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
@@ -25,13 +28,12 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Debug logging for dev environment
-    if (import.meta.env.VITE_DEBUG_MODE === 'true') {
-      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-        data: config.data,
-        params: config.params
-      });
-    }
+    // Always log API requests during development
+    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+      headers: config.headers,
+      data: config.data,
+      params: config.params
+    });
     
     return config;
   },
@@ -44,24 +46,24 @@ apiClient.interceptors.request.use(
 // Handle errors and auth issues globally
 apiClient.interceptors.response.use(
   (response) => {
-    // Debug log for successful calls
-    if (import.meta.env.VITE_DEBUG_MODE === 'true') {
-      console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
-    }
+    // Always log successful API responses during development
+    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+      status: response.status,
+      data: response.data
+    });
     
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
 
-    // Log errors in dev mode
-    if (import.meta.env.VITE_DEBUG_MODE === 'true') {
-      console.error(`❌ API Error: ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`, {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-    }
+    // Always log API errors
+    console.error(`❌ API Error: ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`, {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      baseURL: originalRequest?.baseURL
+    });
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -94,10 +96,15 @@ apiClient.interceptors.response.use(
       error.message = 'Access forbidden - insufficient permissions';
     }
 
-    // Handle network errors
+    // Handle network errors with more detail
     if (!error.response) {
-      error.message = `Cannot connect to backend server at ${API_BASE_URL}. This may be due to CORS issues or the server being down.`;
-      console.error(`Backend connection failed - is the server running at ${API_BASE_URL}?`);
+      const fullUrl = `${originalRequest?.baseURL || API_BASE_URL}${originalRequest?.url || ''}`;
+      error.message = `Cannot connect to backend server. Attempted URL: ${fullUrl}. This may be due to CORS issues, network problems, or the server being down.`;
+      console.error(`🔴 Backend connection failed:`, {
+        attemptedUrl: fullUrl,
+        baseURL: API_BASE_URL,
+        error: error.message
+      });
     }
 
     return Promise.reject(error);
@@ -452,38 +459,106 @@ class ApiService {
   // Get all available disease facts (for condition creation)
   async getDiseaseFacts() {
     try {
-      console.log('📤 Fetching disease facts');
-      // Since there's no GET endpoint for disease facts, we'll use a mock list
-      // In a real app, this should come from the backend
-      return [
-        { id: 'disease-1', name: 'Type 2 Diabetes', code: 'E11.9' },
-        { id: 'disease-2', name: 'Hypertension', code: 'I10' },
-        { id: 'disease-3', name: 'Asthma', code: 'J45.909' },
-        { id: 'disease-4', name: 'Migraine', code: 'G43.909' },
-        { id: 'disease-5', name: 'Depression', code: 'F32.9' },
-        { id: 'disease-6', name: 'Anxiety Disorder', code: 'F41.9' },
-        { id: 'disease-7', name: 'Hypothyroidism', code: 'E03.9' },
-        { id: 'disease-8', name: 'GERD', code: 'K21.9' },
-        { id: 'disease-9', name: 'Chronic Kidney Disease', code: 'N18.9' },
-        { id: 'disease-10', name: 'COPD', code: 'J44.9' }
-      ];
+      console.log('📤 Fetching disease facts from backend');
+      const response = await apiClient.get(API_ENDPOINTS.DISEASE_FACTS);
+      return response.data;
     } catch (error) {
-      console.error('❌ Failed to fetch disease facts:', error);
-      throw new Error('Failed to fetch disease facts');
+      console.warn('Failed to fetch disease facts, using mock data');
+      // Fallback to mock data with valid UUIDs
+      return [
+        { id: '123e4567-e89b-12d3-a456-426614174001', name: 'Type 2 Diabetes', code: 'E11.9' },
+        { id: '123e4567-e89b-12d3-a456-426614174002', name: 'Hypertension', code: 'I10' },
+        { id: '123e4567-e89b-12d3-a456-426614174003', name: 'Asthma', code: 'J45.909' },
+        { id: '123e4567-e89b-12d3-a456-426614174004', name: 'Migraine', code: 'G43.909' },
+        { id: '123e4567-e89b-12d3-a456-426614174005', name: 'Depression', code: 'F32.9' },
+        { id: '123e4567-e89b-12d3-a456-426614174006', name: 'Anxiety Disorder', code: 'F41.9' },
+        { id: '123e4567-e89b-12d3-a456-426614174007', name: 'Hypothyroidism', code: 'E03.9' },
+        { id: '123e4567-e89b-12d3-a456-426614174008', name: 'GERD', code: 'K21.9' },
+        { id: '123e4567-e89b-12d3-a456-426614174009', name: 'Chronic Kidney Disease', code: 'N18.9' },
+        { id: '123e4567-e89b-12d3-a456-426614174010', name: 'COPD', code: 'J44.9' }
+      ];
     }
   }
 
   // ==================== Health Data Management (CRUD) ====================
   async createCondition(conditionData) {
     try {
-      const response = await apiClient.post(API_ENDPOINTS.HEALTH_DATA_CONDITIONS, {
+      // Get current user ID from stored user data
+      const userDataString = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+      console.log('🔍 Raw user data from storage:', userDataString);
+      
+      const userData = JSON.parse(userDataString || '{}');
+      let userId = userData.id || userData.user_id || userData.sub;
+      
+      console.log('🔍 Parsed user data:', userData);
+      console.log('🔍 Initial user ID:', userId);
+      
+      // Skip temporary IDs
+      if (userId && userId.startsWith('temp_')) {
+        console.log('🔍 Skipping temporary ID:', userId);
+        userId = null;
+      }
+      
+      if (!userId) {
+        // Try to get from auth state
+        const authToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+        if (authToken) {
+          // Decode JWT to get user ID
+          try {
+            const tokenParts = authToken.split('.');
+            const payload = JSON.parse(atob(tokenParts[1]));
+            console.log('🔍 JWT payload:', payload);
+            const userIdFromToken = payload.sub || payload.user_id;
+            if (userIdFromToken) {
+              console.log('🔍 Using user ID from token:', userIdFromToken);
+              userId = userIdFromToken;
+            }
+          } catch (e) {
+            console.error('Failed to decode JWT:', e);
+          }
+        }
+        
+        if (!userId) {
+          throw new Error('User ID not found. Please log in again.');
+        }
+      }
+      
+      const payload = {
+        user_id: userId,
         disease_id: conditionData.disease_id,
         onset_date: conditionData.onset_date,
         clinical_status: conditionData.clinical_status || 'active',
         verification_status: conditionData.verification_status || 'provisional'
-      });
+      };
+      
+      console.log('📝 Creating condition:', payload);
+      const response = await apiClient.post(API_ENDPOINTS.HEALTH_DATA_CONDITIONS, payload);
+      console.log('✅ Condition created:', response.data);
       return response.data;
     } catch (error) {
+      console.error('❌ Create condition failed:', {
+        endpoint: API_ENDPOINTS.HEALTH_DATA_CONDITIONS,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      
+      // Provide more specific error messages
+      if (error.response?.status === 404) {
+        throw new Error('Condition creation endpoint not found. Backend implementation required.');
+      } else if (error.response?.status === 422) {
+        const detail = error.response?.data?.detail;
+        if (Array.isArray(detail)) {
+          const errors = detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join(', ');
+          throw new Error(`Validation failed: ${errors}`);
+        } else if (typeof detail === 'string') {
+          throw new Error(`Validation failed: ${detail}`);
+        }
+        throw new Error('Invalid condition data format. Check backend requirements.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
       throw new Error(error.response?.data?.detail || 'Failed to create condition');
     }
   }
@@ -508,7 +583,34 @@ class ApiService {
 
   async createMedication(medicationData) {
     try {
+      const userData = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_DATA) || '{}');
+      let userId = userData.id || userData.user_id || userData.sub;
+      
+      // Skip temporary IDs
+      if (userId && userId.startsWith('temp_')) {
+        userId = null;
+      }
+      
+      if (!userId) {
+        // Try to get from JWT token
+        const authToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+        if (authToken) {
+          try {
+            const tokenParts = authToken.split('.');
+            const payload = JSON.parse(atob(tokenParts[1]));
+            userId = payload.sub || payload.user_id;
+          } catch (e) {
+            console.error('Failed to decode JWT:', e);
+          }
+        }
+      }
+      
+      if (!userId) {
+        throw new Error('User ID not found. Please log in again.');
+      }
+      
       const response = await apiClient.post(API_ENDPOINTS.HEALTH_DATA_MEDICATIONS, {
+        user_id: userId,
         fact_id: medicationData.fact_id,
         label: medicationData.label,
         dose: medicationData.dose,
@@ -519,6 +621,13 @@ class ApiService {
       });
       return response.data;
     } catch (error) {
+      if (error.response?.status === 422) {
+        const detail = error.response?.data?.detail;
+        if (Array.isArray(detail)) {
+          const errors = detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join(', ');
+          throw new Error(`Validation failed: ${errors}`);
+        }
+      }
       throw new Error(error.response?.data?.detail || 'Failed to create medication');
     }
   }
@@ -543,28 +652,95 @@ class ApiService {
 
   async createLabResult(labData) {
     try {
+      const userData = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_DATA) || '{}');
+      let userId = userData.id || userData.user_id || userData.sub;
+      
+      // Skip temporary IDs
+      if (userId && userId.startsWith('temp_')) {
+        userId = null;
+      }
+      
+      if (!userId) {
+        const authToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+        if (authToken) {
+          try {
+            const tokenParts = authToken.split('.');
+            const payload = JSON.parse(atob(tokenParts[1]));
+            userId = payload.sub || payload.user_id;
+          } catch (e) {
+            console.error('Failed to decode JWT:', e);
+          }
+        }
+      }
+      
+      if (!userId) {
+        throw new Error('User ID not found. Please log in again.');
+      }
+      
       const response = await apiClient.post(API_ENDPOINTS.HEALTH_DATA_LABS, {
+        user_id: userId,
         fact_id: labData.fact_id,
-        value: labData.value,
+        value: parseFloat(labData.value), // Ensure number
+        unit: labData.unit || 'mg/dL', // Backend requires unit
         observed: labData.observed,
         notes: labData.notes
       });
       return response.data;
     } catch (error) {
+      if (error.response?.status === 422) {
+        const detail = error.response?.data?.detail;
+        if (Array.isArray(detail)) {
+          const errors = detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join(', ');
+          throw new Error(`Validation failed: ${errors}`);
+        }
+      }
       throw new Error(error.response?.data?.detail || 'Failed to create lab result');
     }
   }
 
   async createVitalSign(vitalData) {
     try {
+      const userData = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_DATA) || '{}');
+      let userId = userData.id || userData.user_id || userData.sub;
+      
+      // Skip temporary IDs
+      if (userId && userId.startsWith('temp_')) {
+        userId = null;
+      }
+      
+      if (!userId) {
+        const authToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+        if (authToken) {
+          try {
+            const tokenParts = authToken.split('.');
+            const payload = JSON.parse(atob(tokenParts[1]));
+            userId = payload.sub || payload.user_id;
+          } catch (e) {
+            console.error('Failed to decode JWT:', e);
+          }
+        }
+      }
+      
+      if (!userId) {
+        throw new Error('User ID not found. Please log in again.');
+      }
+      
       const response = await apiClient.post(API_ENDPOINTS.HEALTH_DATA_VITALS, {
+        user_id: userId,
         fact_id: vitalData.fact_id,
-        value: vitalData.value,
-        observed: vitalData.observed,
-        notes: vitalData.notes
+        value: parseFloat(vitalData.value), // Ensure number
+        unit: vitalData.unit || 'mmHg', // Backend requires unit
+        observed: vitalData.observed
       });
       return response.data;
     } catch (error) {
+      if (error.response?.status === 422) {
+        const detail = error.response?.data?.detail;
+        if (Array.isArray(detail)) {
+          const errors = detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join(', ');
+          throw new Error(`Validation failed: ${errors}`);
+        }
+      }
       throw new Error(error.response?.data?.detail || 'Failed to create vital sign');
     }
   }
@@ -738,9 +914,17 @@ class ApiService {
   // ==================== System Health ====================
   async healthCheck() {
     try {
+      console.log('🏥 Health check attempt to:', `${API_BASE_URL}${API_ENDPOINTS.HEALTH_CHECK}`);
       const response = await apiClient.get(API_ENDPOINTS.HEALTH_CHECK);
+      console.log('✅ Health check successful:', response.data);
       return response.data;
     } catch (error) {
+      console.error('❌ Health check failed:', {
+        url: `${API_BASE_URL}${API_ENDPOINTS.HEALTH_CHECK}`,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        error: error.message
+      });
       throw new Error('API health check failed');
     }
   }

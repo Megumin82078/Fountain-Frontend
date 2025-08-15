@@ -3,6 +3,7 @@ import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import toast from '../../utils/toast';
 import { useWebNotifications } from '../../hooks/useNotifications';
+import apiService from '../../services/api';
 
 import { 
   Button, 
@@ -34,6 +35,7 @@ const MedicationsPage = () => {
   const { state, dispatch } = useApp();
   const { showMedicationReminder } = useWebNotifications();
   const [loading, setLoading] = useState(false);
+  const [medications, setMedications] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -54,7 +56,30 @@ const MedicationsPage = () => {
     instructions: ''
   });
 
-  const medications = state.healthData.medications || [];
+  // Fetch medications from backend on mount
+  useEffect(() => {
+    fetchMedications();
+  }, []);
+
+  const fetchMedications = async () => {
+    setLoading(true);
+    try {
+      const data = await apiService.getMedications();
+      setMedications(Array.isArray(data) ? data : []);
+      // Also update the global state for consistency
+      dispatch({
+        type: 'SET_MEDICATIONS',
+        payload: Array.isArray(data) ? data : []
+      });
+    } catch (error) {
+      console.error('Failed to fetch medications:', error);
+      toast.error('Failed to load medications. Using local data.');
+      // Fall back to local state if backend fails
+      setMedications(state.healthData.medications || []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter medications
   const filteredMedications = medications.filter(medication => {
@@ -122,7 +147,7 @@ const MedicationsPage = () => {
     setShowAddModal(true);
   };
 
-  const handleSaveMedication = () => {
+  const handleSaveMedication = async () => {
     // Validation
     if (!newMedication.name.trim()) {
       toast.error('Please enter a medication name');
@@ -153,19 +178,47 @@ const MedicationsPage = () => {
       return;
     }
 
-    const medicationToAdd = {
-      ...newMedication,
-      id: Date.now().toString(),
-      startDate: newMedication.startDate
-    };
+    setLoading(true);
+    try {
+      // Convert frontend format to backend format
+      const medicationData = {
+        fact_id: 'med-' + Date.now(), // Temporary fact_id until we have medication facts
+        label: newMedication.name,
+        dose: newMedication.dosage,
+        unit: newMedication.dosageUnit || 'mg',
+        frequency: newMedication.frequency,
+        start_date: newMedication.startDate,
+        end_date: newMedication.endDate || null
+      };
 
-    dispatch({
-      type: 'ADD_MEDICATION',
-      payload: medicationToAdd
-    });
+      const createdMedication = await apiService.createMedication(medicationData);
+      
+      // Update local state
+      const formattedMedication = {
+        ...createdMedication,
+        name: createdMedication.label,
+        dosage: createdMedication.dose,
+        genericName: newMedication.genericName,
+        status: newMedication.status,
+        type: newMedication.type,
+        prescriber: newMedication.prescriber,
+        instructions: newMedication.instructions
+      };
+      
+      setMedications(prev => [...prev, formattedMedication]);
+      dispatch({
+        type: 'ADD_MEDICATION',
+        payload: formattedMedication
+      });
 
-    setShowAddModal(false);
-    toast.success('Medication added successfully!');
+      setShowAddModal(false);
+      toast.success('Medication added successfully!');
+    } catch (error) {
+      console.error('Failed to create medication:', error);
+      toast.error('Failed to add medication. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -210,30 +263,78 @@ const MedicationsPage = () => {
     setShowDetailsModal(false);
   };
 
-  const handleUpdateMedication = () => {
+  const handleUpdateMedication = async () => {
     if (!editingMedication.name.trim()) {
       toast.error('Please enter a medication name');
       return;
     }
 
-    dispatch({
-      type: 'EDIT_MEDICATION',
-      payload: editingMedication
-    });
+    setLoading(true);
+    try {
+      // Convert to backend format
+      const updateData = {
+        label: editingMedication.name,
+        dose: editingMedication.dosage,
+        unit: editingMedication.dosageUnit || 'mg',
+        frequency: editingMedication.frequency,
+        start_date: editingMedication.startDate,
+        end_date: editingMedication.endDate || null
+      };
 
-    setShowEditModal(false);
-    setEditingMedication(null);
-    toast.success('Medication updated successfully!');
+      const updatedMedication = await apiService.updateMedication(editingMedication.id, updateData);
+      
+      // Update local state
+      const formattedMedication = {
+        ...updatedMedication,
+        name: updatedMedication.label,
+        dosage: updatedMedication.dose,
+        genericName: editingMedication.genericName,
+        status: editingMedication.status,
+        type: editingMedication.type,
+        prescriber: editingMedication.prescriber,
+        instructions: editingMedication.instructions
+      };
+      
+      setMedications(prev => prev.map(med => 
+        med.id === editingMedication.id ? formattedMedication : med
+      ));
+      dispatch({
+        type: 'EDIT_MEDICATION',
+        payload: formattedMedication
+      });
+
+      setShowEditModal(false);
+      setEditingMedication(null);
+      toast.success('Medication updated successfully!');
+    } catch (error) {
+      console.error('Failed to update medication:', error);
+      toast.error('Failed to update medication. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteMedication = (medicationId) => {
+  const handleDeleteMedication = async (medicationId) => {
     if (window.confirm('Are you sure you want to delete this medication?')) {
-      dispatch({
-        type: 'DELETE_MEDICATION',
-        payload: medicationId
-      });
-      setShowDetailsModal(false);
-      toast.success('Medication deleted successfully!');
+      setLoading(true);
+      try {
+        await apiService.deleteMedication(medicationId);
+        
+        // Update local state
+        setMedications(prev => prev.filter(med => med.id !== medicationId));
+        dispatch({
+          type: 'DELETE_MEDICATION',
+          payload: medicationId
+        });
+        
+        setShowDetailsModal(false);
+        toast.success('Medication deleted successfully!');
+      } catch (error) {
+        console.error('Failed to delete medication:', error);
+        toast.error('Failed to delete medication. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -609,13 +710,30 @@ const MedicationsPage = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dosage
+                  Dosage *
                 </label>
-                <Input
-                  value={newMedication.dosage}
-                  onChange={(e) => handleInputChange('dosage', e.target.value)}
-                  placeholder="e.g., 10mg, 500mg"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={newMedication.dosage}
+                    onChange={(e) => handleInputChange('dosage', e.target.value)}
+                    placeholder="e.g., 10, 500"
+                    className="flex-1"
+                  />
+                  <Select
+                    value={{ value: newMedication.dosageUnit || 'mg', label: newMedication.dosageUnit || 'mg' }}
+                    onChange={(option) => handleInputChange('dosageUnit', option.value)}
+                    options={[
+                      { value: 'mg', label: 'mg' },
+                      { value: 'g', label: 'g' },
+                      { value: 'mcg', label: 'mcg' },
+                      { value: 'ml', label: 'ml' },
+                      { value: 'units', label: 'units' },
+                      { value: 'tablets', label: 'tablets' },
+                      { value: 'capsules', label: 'capsules' }
+                    ]}
+                    containerClassName="w-32"
+                  />
+                </div>
               </div>
 
               <div>
@@ -842,11 +960,28 @@ const MedicationsPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dosage *
                   </label>
-                  <Input
-                    value={editingMedication.dosage}
-                    onChange={(e) => handleEditInputChange('dosage', e.target.value)}
-                    placeholder="e.g., 10mg, 500mg"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={editingMedication.dosage}
+                      onChange={(e) => handleEditInputChange('dosage', e.target.value)}
+                      placeholder="e.g., 10, 500"
+                      className="flex-1"
+                    />
+                    <Select
+                      value={{ value: editingMedication.dosageUnit || 'mg', label: editingMedication.dosageUnit || 'mg' }}
+                      onChange={(option) => handleEditInputChange('dosageUnit', option.value)}
+                      options={[
+                        { value: 'mg', label: 'mg' },
+                        { value: 'g', label: 'g' },
+                        { value: 'mcg', label: 'mcg' },
+                        { value: 'ml', label: 'ml' },
+                        { value: 'units', label: 'units' },
+                        { value: 'tablets', label: 'tablets' },
+                        { value: 'capsules', label: 'capsules' }
+                      ]}
+                      containerClassName="w-32"
+                    />
+                  </div>
                 </div>
 
                 <div>

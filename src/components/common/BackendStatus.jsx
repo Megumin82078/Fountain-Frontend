@@ -63,6 +63,11 @@ const BackendStatus = () => {
     return null;
   }
   
+  // Don't show on landing page unless explicitly enabled
+  if (window.location.pathname === '/' && !import.meta.env.VITE_SHOW_BACKEND_STATUS_ON_LANDING) {
+    return null;
+  }
+  
   // Show small indicator if connected and VITE_ALWAYS_SHOW_BACKEND_STATUS is true
   if (status === 'connected') {
     return (

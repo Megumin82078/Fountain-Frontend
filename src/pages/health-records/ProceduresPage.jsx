@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import toast from '../../utils/toast';
+import apiService from '../../services/api';
 
 import { 
   Button, 
@@ -29,6 +30,7 @@ import {
 const ProceduresPage = () => {
   const { state, dispatch } = useApp();
   const [loading, setLoading] = useState(false);
+  const [procedures, setProcedures] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -53,7 +55,42 @@ const ProceduresPage = () => {
     attachments: []
   });
 
-  const procedures = state.healthData.procedures || [];
+  // Fetch procedures from backend on mount
+  useEffect(() => {
+    fetchProcedures();
+  }, []);
+
+  const fetchProcedures = async () => {
+    setLoading(true);
+    try {
+      const data = await apiService.getProcedures();
+      const formattedProcedures = Array.isArray(data) ? data.map(proc => ({
+        ...proc,
+        name: proc.label || proc.fact?.name || 'Unknown Procedure',
+        description: proc.notes || proc.fact?.description || '',
+        type: proc.fact?.type || 'diagnostic',
+        status: proc.status || 'completed',
+        date: proc.date || proc.performed_date,
+        location: proc.location || '',
+        provider: proc.provider || '',
+        outcome: proc.outcome || '',
+        attachments: proc.attachments || []
+      })) : [];
+      setProcedures(formattedProcedures);
+      // Also update global state for consistency
+      dispatch({
+        type: 'SET_PROCEDURES',
+        payload: formattedProcedures
+      });
+    } catch (error) {
+      console.error('Failed to fetch procedures:', error);
+      toast.error('Failed to load procedures. Using local data.');
+      // Fall back to local state if backend fails
+      setProcedures(state.healthData.procedures || []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter procedures
   const filteredProcedures = procedures.filter(procedure => {
@@ -191,25 +228,68 @@ const ProceduresPage = () => {
     setShowAddModal(true);
   };
 
-  const handleSaveProcedure = () => {
+  const handleSaveProcedure = async () => {
     if (!newProcedure.name.trim()) {
       toast.error('Please enter a procedure name');
       return;
     }
 
-    const procedureToAdd = {
-      ...newProcedure,
-      id: Date.now().toString(),
-      date: newProcedure.time ? `${newProcedure.date}T${newProcedure.time}:00.000Z` : `${newProcedure.date}T00:00:00.000Z`
-    };
+    setLoading(true);
+    try {
+      // Convert to backend format
+      const procedureData = {
+        fact_id: 'proc-' + Date.now(), // Temporary fact_id until we have procedure facts
+        label: newProcedure.name,
+        date: newProcedure.time ? `${newProcedure.date}T${newProcedure.time}:00.000Z` : `${newProcedure.date}T00:00:00.000Z`,
+        notes: newProcedure.notes || null
+      };
 
-    dispatch({
-      type: 'ADD_PROCEDURE',
-      payload: procedureToAdd
-    });
+      const createdProcedure = await apiService.createProcedure(procedureData);
+      
+      // Format for frontend
+      const procedureToAdd = {
+        ...createdProcedure,
+        name: createdProcedure.label,
+        description: newProcedure.description,
+        type: newProcedure.type,
+        status: newProcedure.status,
+        location: newProcedure.location,
+        provider: newProcedure.provider,
+        duration: newProcedure.duration,
+        outcome: newProcedure.outcome,
+        attachments: newProcedure.attachments
+      };
+      
+      setProcedures(prev => [...prev, procedureToAdd]);
+      dispatch({
+        type: 'ADD_PROCEDURE',
+        payload: procedureToAdd
+      });
 
-    setShowAddModal(false);
-    toast.success('Procedure added successfully!');
+      setShowAddModal(false);
+      toast.success('Procedure added successfully!');
+      
+      // Reset form
+      setNewProcedure({
+        name: '',
+        description: '',
+        type: 'diagnostic',
+        status: 'scheduled',
+        date: new Date().toISOString().split('T')[0],
+        time: '',
+        location: '',
+        provider: '',
+        duration: '',
+        outcome: '',
+        notes: '',
+        attachments: []
+      });
+    } catch (error) {
+      console.error('Failed to create procedure:', error);
+      toast.error('Failed to add procedure. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditProcedure = (procedure) => {
@@ -223,35 +303,77 @@ const ProceduresPage = () => {
     setShowDetailsModal(false);
   };
 
-  const handleUpdateProcedure = () => {
+  const handleUpdateProcedure = async () => {
     if (!editingProcedure.name.trim()) {
       toast.error('Please enter a procedure name');
       return;
     }
 
-    const updatedProcedure = {
-      ...editingProcedure,
-      date: editingProcedure.time ? `${editingProcedure.date}T${editingProcedure.time}:00.000Z` : `${editingProcedure.date}T00:00:00.000Z`
-    };
+    setLoading(true);
+    try {
+      // Convert to backend format
+      const updateData = {
+        label: editingProcedure.name,
+        date: editingProcedure.time ? `${editingProcedure.date}T${editingProcedure.time}:00.000Z` : `${editingProcedure.date}T00:00:00.000Z`,
+        notes: editingProcedure.notes || null
+      };
 
-    dispatch({
-      type: 'EDIT_PROCEDURE',
-      payload: updatedProcedure
-    });
+      const updatedProcedure = await apiService.updateProcedure(editingProcedure.id, updateData);
+      
+      // Format for frontend
+      const formattedProcedure = {
+        ...updatedProcedure,
+        name: updatedProcedure.label,
+        description: editingProcedure.description,
+        type: editingProcedure.type,
+        status: editingProcedure.status,
+        location: editingProcedure.location,
+        provider: editingProcedure.provider,
+        duration: editingProcedure.duration,
+        outcome: editingProcedure.outcome,
+        attachments: editingProcedure.attachments
+      };
+      
+      setProcedures(prev => prev.map(proc => 
+        proc.id === editingProcedure.id ? formattedProcedure : proc
+      ));
+      dispatch({
+        type: 'EDIT_PROCEDURE',
+        payload: formattedProcedure
+      });
 
-    setShowEditModal(false);
-    setEditingProcedure(null);
-    toast.success('Procedure updated successfully!');
+      setShowEditModal(false);
+      setEditingProcedure(null);
+      toast.success('Procedure updated successfully!');
+    } catch (error) {
+      console.error('Failed to update procedure:', error);
+      toast.error('Failed to update procedure. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteProcedure = (procedureId) => {
+  const handleDeleteProcedure = async (procedureId) => {
     if (window.confirm('Are you sure you want to delete this procedure?')) {
-      dispatch({
-        type: 'DELETE_PROCEDURE',
-        payload: procedureId
-      });
-      setShowDetailsModal(false);
-      toast.success('Procedure deleted successfully!');
+      setLoading(true);
+      try {
+        await apiService.deleteProcedure(procedureId);
+        
+        // Update local state
+        setProcedures(prev => prev.filter(proc => proc.id !== procedureId));
+        dispatch({
+          type: 'DELETE_PROCEDURE',
+          payload: procedureId
+        });
+        
+        setShowDetailsModal(false);
+        toast.success('Procedure deleted successfully!');
+      } catch (error) {
+        console.error('Failed to delete procedure:', error);
+        toast.error('Failed to delete procedure. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

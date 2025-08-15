@@ -1,9 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { ROUTES } from './constants';
-import { BackendStatus } from './components/common';
+import { BackendStatus, ErrorBoundary } from './components/common';
 
 // Import all pages
 import LandingPage from './pages/public/LandingPage';
@@ -11,6 +11,7 @@ import LoginPage from './pages/auth/LoginPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import StateDemo from './pages/demo/StateDemo';
 import ConditionsPage from './pages/health-records/ConditionsPage';
+import ApiTestPage from './pages/debug/ApiTestPage';
 import MedicationsPage from './pages/health-records/MedicationsPage';
 import LabResultsPage from './pages/health-records/LabResultsPage';
 import VitalSignsPage from './pages/health-records/VitalSignsPage';
@@ -24,35 +25,18 @@ import SettingsPage from './pages/dashboard/SettingsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import SupabaseCallback from './components/auth/SupabaseCallback';
 
-// Error boundary component
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+// Removed old error boundary - using the new one from components/common
 
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+// Component to conditionally render BackendStatus based on route
+function ConditionalBackendStatus() {
+  const location = useLocation();
+  
+  // Don't show on landing page
+  if (location.pathname === '/') {
+    return null;
   }
-
-  componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ padding: '20px', color: 'red', backgroundColor: 'white' }}>
-          <h1>Component Error</h1>
-          <pre>{this.state.error?.toString()}</pre>
-          <pre>{this.state.error?.stack}</pre>
-          <button onClick={() => window.location.reload()}>Reload Page</button>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
+  
+  return <BackendStatus />;
 }
 
 function App() {
@@ -204,6 +188,16 @@ function App() {
                   } 
                 />
                 
+                {/* Debug Routes */}
+                <Route 
+                  path="/debug/api-test" 
+                  element={
+                    <ProtectedRoute>
+                      <ApiTestPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                
                 {/* Catch all route - 404 page */}
                 <Route path="*" element={
                   <div className="page-container">
@@ -222,8 +216,8 @@ function App() {
                 } />
               </Routes>
               
-              {/* Backend Status Monitor - Shows when backend is down */}
-              <BackendStatus />
+              {/* Backend Status Monitor - Shows when backend is down (not on landing page) */}
+              <ConditionalBackendStatus />
             </div>
           </Router>
         </SettingsProvider>

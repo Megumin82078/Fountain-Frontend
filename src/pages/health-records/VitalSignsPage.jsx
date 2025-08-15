@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import toast from '../../utils/toast';
+import apiService from '../../services/api';
 
 import { 
   Button, 
@@ -33,6 +34,7 @@ const HeartbeatIcon = ({ className }) => (
 const VitalSignsPage = () => {
   const { state, dispatch } = useApp();
   const [loading, setLoading] = useState(false);
+  const [vitals, setVitals] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
@@ -53,7 +55,90 @@ const VitalSignsPage = () => {
     notes: ''
   });
 
-  const vitals = state.healthData.vitals || [];
+  // Fetch vitals from backend on mount
+  useEffect(() => {
+    fetchVitals();
+  }, []);
+
+  const fetchVitals = async () => {
+    setLoading(true);
+    try {
+      const data = await apiService.getVitals();
+      const formattedVitals = Array.isArray(data) ? data.map(vital => {
+        // Parse the vital type and value
+        let type = 'unknown';
+        let displayValue = vital.value;
+        let unit = vital.fact?.unit || '';
+        
+        // Map backend vital types to frontend
+        if (vital.fact?.name) {
+          const name = vital.fact.name.toLowerCase();
+          if (name.includes('blood pressure')) {
+            type = 'blood_pressure';
+            // Parse systolic/diastolic from value if formatted as "120/80"
+            const parts = vital.value.split('/');
+            if (parts.length === 2) {
+              return {
+                ...vital,
+                type,
+                systolic: parts[0],
+                diastolic: parts[1],
+                value: vital.value,
+                date: vital.observed,
+                unit: 'mmHg',
+                flagged: vital.is_abnormal || false
+              };
+            }
+          } else if (name.includes('heart rate') || name.includes('pulse')) {
+            type = 'heart_rate';
+            unit = 'bpm';
+          } else if (name.includes('temperature')) {
+            type = 'temperature';
+            unit = unit || '°F';
+          } else if (name.includes('weight')) {
+            type = 'weight';
+            unit = unit || 'lbs';
+          } else if (name.includes('height')) {
+            type = 'height';
+            unit = unit || 'in';
+          } else if (name.includes('oxygen') || name.includes('spo2')) {
+            type = 'oxygen_saturation';
+            unit = '%';
+          } else if (name.includes('respiratory')) {
+            type = 'respiratory_rate';
+            unit = 'breaths/min';
+          } else if (name.includes('bmi')) {
+            type = 'bmi';
+            unit = 'kg/m²';
+          }
+        }
+        
+        return {
+          ...vital,
+          type,
+          value: displayValue,
+          date: vital.observed,
+          unit,
+          flagged: vital.is_abnormal || false,
+          notes: vital.notes || ''
+        };
+      }) : [];
+      
+      setVitals(formattedVitals);
+      // Also update global state for consistency
+      dispatch({
+        type: 'SET_VITALS',
+        payload: formattedVitals
+      });
+    } catch (error) {
+      console.error('Failed to fetch vitals:', error);
+      toast.error('Failed to load vital signs. Using local data.');
+      // Fall back to local state if backend fails
+      setVitals(state.healthData.vitals || []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter vitals
   const filteredVitals = vitals.filter(vital => {
@@ -109,6 +194,21 @@ const VitalSignsPage = () => {
   };
 
   const latestReadings = getLatestReadings();
+  
+  // Helper function to get default unit for vital types
+  const getDefaultUnit = (type) => {
+    const units = {
+      blood_pressure: 'mmHg',
+      heart_rate: 'bpm',
+      temperature: '°F',
+      weight: 'lbs',
+      height: 'in',
+      bmi: 'kg/m²',
+      oxygen_saturation: '%',
+      respiratory_rate: 'breaths/min'
+    };
+    return units[type] || '';
+  };
 
   const typeOptions = [
     { value: 'all', label: 'All Types' },
@@ -218,7 +318,7 @@ const VitalSignsPage = () => {
     setShowAddModal(true);
   };
 
-  const handleSaveVital = () => {
+  const handleSaveVital = async () => {
     // Validate based on vital type
     if (newVital.type === 'blood_pressure') {
       if (!newVital.systolic || !newVital.diastolic) {
@@ -287,21 +387,65 @@ const VitalSignsPage = () => {
     // Check if vital is abnormal based on normal ranges
     const isAbnormal = checkIfVitalAbnormal(newVital);
     
-    const vitalToAdd = {
-      ...newVital,
-      id: Date.now().toString(),
-      date: `${newVital.date}T${newVital.time}:00.000Z`,
-      flagged: isAbnormal,
-      severity: isAbnormal ? determineVitalSeverity(newVital) : null
-    };
+    setLoading(true);
+    try {
+      // Format value based on type
+      let formattedValue = newVital.value;
+      if (newVital.type === 'blood_pressure') {
+        formattedValue = `${newVital.systolic}/${newVital.diastolic}`;
+      }
+      
+      // Convert to backend format
+      const vitalData = {
+        fact_id: 'vital-' + Date.now(), // Temporary fact_id until we have vital facts
+        value: formattedValue,
+        observed: `${newVital.date}T${newVital.time}:00.000Z`,
+        notes: newVital.notes || null
+      };
 
-    dispatch({
-      type: 'ADD_VITAL',
-      payload: vitalToAdd
-    });
+      const createdVital = await apiService.createVitalSign(vitalData);
+      
+      // Format for frontend
+      const vitalToAdd = {
+        ...createdVital,
+        type: newVital.type,
+        value: formattedValue,
+        systolic: newVital.systolic,
+        diastolic: newVital.diastolic,
+        unit: newVital.unit || getDefaultUnit(newVital.type),
+        date: createdVital.observed,
+        location: newVital.location,
+        flagged: createdVital.is_abnormal || isAbnormal,
+        severity: isAbnormal ? determineVitalSeverity(newVital) : null
+      };
+      
+      setVitals(prev => [...prev, vitalToAdd]);
+      dispatch({
+        type: 'ADD_VITAL',
+        payload: vitalToAdd
+      });
 
-    setShowAddModal(false);
-    toast.success('Vital sign recorded successfully!');
+      setShowAddModal(false);
+      toast.success('Vital sign recorded successfully!');
+      
+      // Reset form
+      setNewVital({
+        type: 'blood_pressure',
+        value: '',
+        systolic: '',
+        diastolic: '',
+        unit: '',
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+        location: '',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Failed to create vital sign:', error);
+      toast.error('Failed to record vital sign. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditVital = (vital) => {
@@ -315,7 +459,7 @@ const VitalSignsPage = () => {
     setShowDetailsModal(false);
   };
 
-  const handleUpdateVital = () => {
+  const handleUpdateVital = async () => {
     // Validate based on vital type
     if (editingVital.type === 'blood_pressure') {
       if (!editingVital.systolic || !editingVital.diastolic) {
@@ -332,31 +476,56 @@ const VitalSignsPage = () => {
     // Check if vital is abnormal based on normal ranges
     const isAbnormal = checkIfVitalAbnormal(editingVital);
     
-    const updatedVital = {
-      ...editingVital,
-      date: `${editingVital.date}T${editingVital.time}:00.000Z`,
-      flagged: isAbnormal,
-      severity: isAbnormal ? determineVitalSeverity(editingVital) : null
-    };
+    setLoading(true);
+    try {
+      // Since backend doesn't have update endpoint for vitals, we'll update locally
+      // In a real app, this would call an update API
+      const updatedVital = {
+        ...editingVital,
+        date: `${editingVital.date}T${editingVital.time}:00.000Z`,
+        flagged: isAbnormal,
+        severity: isAbnormal ? determineVitalSeverity(editingVital) : null
+      };
+      
+      setVitals(prev => prev.map(vital => 
+        vital.id === editingVital.id ? updatedVital : vital
+      ));
+      dispatch({
+        type: 'EDIT_VITAL',
+        payload: updatedVital
+      });
 
-    dispatch({
-      type: 'EDIT_VITAL',
-      payload: updatedVital
-    });
-
-    setShowEditModal(false);
-    setEditingVital(null);
-    toast.success('Vital sign updated successfully!');
+      setShowEditModal(false);
+      setEditingVital(null);
+      toast.success('Vital sign updated successfully!');
+    } catch (error) {
+      console.error('Failed to update vital sign:', error);
+      toast.error('Failed to update vital sign. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteVital = (vitalId) => {
+  const handleDeleteVital = async (vitalId) => {
     if (window.confirm('Are you sure you want to delete this vital sign reading?')) {
-      dispatch({
-        type: 'DELETE_VITAL',
-        payload: vitalId
-      });
-      setShowDetailsModal(false);
-      toast.success('Vital sign deleted successfully!');
+      setLoading(true);
+      try {
+        // Since backend doesn't have delete endpoint for vitals, we'll delete locally
+        // In a real app, this would call a delete API
+        setVitals(prev => prev.filter(vital => vital.id !== vitalId));
+        dispatch({
+          type: 'DELETE_VITAL',
+          payload: vitalId
+        });
+        
+        setShowDetailsModal(false);
+        toast.success('Vital sign deleted successfully!');
+      } catch (error) {
+        console.error('Failed to delete vital sign:', error);
+        toast.error('Failed to delete vital sign. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

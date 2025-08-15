@@ -59,12 +59,17 @@ export const ActionTypes = {
   LOGIN_FAILURE: 'LOGIN_FAILURE',
   LOGOUT: 'LOGOUT',
   SET_USER: 'SET_USER',
+  UPDATE_USER_AVATAR: 'UPDATE_USER_AVATAR',
   
   // Managing health records
   SET_HEALTH_DATA_LOADING: 'SET_HEALTH_DATA_LOADING',
   SET_HEALTH_DATA: 'SET_HEALTH_DATA',
   SET_HEALTH_DATA_CATEGORY: 'SET_HEALTH_DATA_CATEGORY',
   CLEAR_HEALTH_DATA: 'CLEAR_HEALTH_DATA',
+  SET_MEDICATIONS: 'SET_MEDICATIONS',
+  SET_LAB_RESULTS: 'SET_LAB_RESULTS',
+  SET_VITALS: 'SET_VITALS',
+  SET_PROCEDURES: 'SET_PROCEDURES',
   ADD_CONDITION: 'ADD_CONDITION',
   EDIT_CONDITION: 'EDIT_CONDITION',
   DELETE_CONDITION: 'DELETE_CONDITION',
@@ -165,6 +170,18 @@ const appReducer = (state, action) => {
           user: action.payload,
           isAuthenticated: true,
           loading: false
+        }
+      };
+      
+    case ActionTypes.UPDATE_USER_AVATAR:
+      return {
+        ...state,
+        auth: {
+          ...state.auth,
+          user: {
+            ...state.auth.user,
+            avatar_url: action.payload
+          }
         }
       };
       
@@ -350,6 +367,46 @@ const appReducer = (state, action) => {
         healthData: initialState.healthData
       };
       
+    case ActionTypes.SET_MEDICATIONS:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          medications: action.payload,
+          loading: false
+        }
+      };
+      
+    case ActionTypes.SET_LAB_RESULTS:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          labs: action.payload,
+          loading: false
+        }
+      };
+      
+    case ActionTypes.SET_VITALS:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          vitals: action.payload,
+          loading: false
+        }
+      };
+      
+    case ActionTypes.SET_PROCEDURES:
+      return {
+        ...state,
+        healthData: {
+          ...state.healthData,
+          procedures: action.payload,
+          loading: false
+        }
+      };
+      
     // Provider/facility updates
     case ActionTypes.SET_PROVIDERS_LOADING:
       return {
@@ -406,7 +463,7 @@ const appReducer = (state, action) => {
         }
       };
       
-    case ActionTypes.MARK_ALERT_READ:
+    case ActionTypes.MARK_ALERT_READ: {
       console.log('Reducer: MARK_ALERT_READ called with payload:', action.payload);
       console.log('Current alerts list:', state.alerts.list);
       const updatedState = {
@@ -425,6 +482,7 @@ const appReducer = (state, action) => {
       };
       console.log('New state alerts:', updatedState.alerts.list);
       return updatedState;
+    }
     
     case ActionTypes.MARK_ALERT_UNREAD:
       return {
@@ -442,7 +500,7 @@ const appReducer = (state, action) => {
         }
       };
     
-    case ActionTypes.DELETE_ALERT:
+    case ActionTypes.DELETE_ALERT: {
       const alertToDelete = state.alerts.list.find(alert => alert.id === action.payload);
       return {
         ...state,
@@ -454,8 +512,9 @@ const appReducer = (state, action) => {
             : state.alerts.unreadCount
         }
       };
+    }
     
-    case ActionTypes.UPDATE_ALERT_STATUS:
+    case ActionTypes.UPDATE_ALERT_STATUS: {
       const previousAlert = state.alerts.list.find(alert => alert.id === action.payload.id);
       const wasUnread = previousAlert?.status === 'unread';
       const isNowUnread = action.payload.status === 'unread';
@@ -476,6 +535,7 @@ const appReducer = (state, action) => {
             : state.alerts.unreadCount
         }
       };
+    }
       
     // UI stuff like sidebar and theme
     case ActionTypes.TOGGLE_SIDEBAR:

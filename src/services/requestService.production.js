@@ -114,7 +114,7 @@ class ProductionRequestService {
         status: 'pending'
       };
       
-      const response = await apiService.post('/request-batches', payload);
+      const response = await apiService.post(API_ENDPOINTS.REQUEST_BATCHES, payload);
       
       return {
         data: response.data,

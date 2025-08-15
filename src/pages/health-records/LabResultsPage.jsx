@@ -3,6 +3,7 @@ import { AppLayout } from '../../components/layout';
 import { useApp } from '../../context/AppContext';
 import toast from '../../utils/toast';
 import { useHealthData } from '../../hooks/useHealthData';
+import apiService from '../../services/api';
 import { 
   Button, 
   Card, 
@@ -28,6 +29,7 @@ const LabResultsPage = () => {
   const { state, dispatch } = useApp();
   const { getAbnormalResults } = useHealthData();
   const [loading, setLoading] = useState(false);
+  const [labResults, setLabResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
@@ -48,8 +50,42 @@ const LabResultsPage = () => {
     attachments: []
   });
 
-  const labResults = state.healthData.labs || [];
-  const abnormalResults = getAbnormalResults();
+  // Fetch lab results from backend on mount
+  useEffect(() => {
+    fetchLabResults();
+  }, []);
+
+  const fetchLabResults = async () => {
+    setLoading(true);
+    try {
+      const data = await apiService.getLabs();
+      const formattedResults = Array.isArray(data) ? data.map(lab => ({
+        ...lab,
+        testName: lab.label || lab.fact?.name || 'Unknown Test',
+        result: lab.value,
+        date: lab.observed,
+        flagged: lab.is_abnormal || false,
+        referenceRange: lab.fact?.reference_range || '',
+        unit: lab.fact?.unit || '',
+        category: lab.fact?.category || 'Other'
+      })) : [];
+      setLabResults(formattedResults);
+      // Also update global state for consistency
+      dispatch({
+        type: 'SET_LAB_RESULTS',
+        payload: formattedResults
+      });
+    } catch (error) {
+      console.error('Failed to fetch lab results:', error);
+      toast.error('Failed to load lab results. Using local data.');
+      // Fall back to local state if backend fails
+      setLabResults(state.healthData.labs || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const abnormalResults = labResults.filter(r => r.flagged);
 
   // Filter lab results
   const filteredResults = labResults.filter(result => {
@@ -254,29 +290,69 @@ const LabResultsPage = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleSaveResult = () => {
+  const handleSaveResult = async () => {
     if (!newResult.testName.trim() || !newResult.result.trim()) {
       toast.error('Please enter test name and result');
       return;
     }
 
-    // Check if result is abnormal based on reference range
-    const isAbnormal = checkIfAbnormal(newResult.result, newResult.referenceRange);
-    
-    const resultToAdd = {
-      ...newResult,
-      id: Date.now().toString(),
-      flagged: isAbnormal,
-      severity: isAbnormal ? determineSeverity(newResult.result, newResult.referenceRange) : null
-    };
+    setLoading(true);
+    try {
+      // Check if result is abnormal based on reference range
+      const isAbnormal = checkIfAbnormal(newResult.result, newResult.referenceRange);
+      
+      // Convert to backend format
+      const labData = {
+        fact_id: 'lab-' + Date.now(), // Temporary fact_id until we have lab facts
+        value: newResult.result,
+        observed: newResult.date,
+        notes: newResult.notes || null
+      };
 
-    dispatch({
-      type: 'ADD_LAB_RESULT',
-      payload: resultToAdd
-    });
+      const createdLab = await apiService.createLabResult(labData);
+      
+      // Format for frontend
+      const formattedResult = {
+        ...createdLab,
+        testName: newResult.testName,
+        result: createdLab.value,
+        date: createdLab.observed,
+        flagged: createdLab.is_abnormal || isAbnormal,
+        referenceRange: newResult.referenceRange,
+        unit: newResult.unit,
+        category: newResult.category,
+        provider: newResult.provider,
+        attachments: newResult.attachments,
+        severity: isAbnormal ? determineSeverity(newResult.result, newResult.referenceRange) : null
+      };
+      
+      setLabResults(prev => [...prev, formattedResult]);
+      dispatch({
+        type: 'ADD_LAB_RESULT',
+        payload: formattedResult
+      });
 
-    setShowAddModal(false);
-    toast.success('Lab result added successfully!');
+      setShowAddModal(false);
+      toast.success('Lab result added successfully!');
+      
+      // Reset form
+      setNewResult({
+        testName: '',
+        result: '',
+        unit: '',
+        referenceRange: '',
+        category: 'Blood Chemistry',
+        date: new Date().toISOString().split('T')[0],
+        provider: '',
+        notes: '',
+        attachments: []
+      });
+    } catch (error) {
+      console.error('Failed to create lab result:', error);
+      toast.error('Failed to add lab result. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditResult = (result) => {
@@ -285,39 +361,63 @@ const LabResultsPage = () => {
     setShowDetailsModal(false);
   };
 
-  const handleUpdateResult = () => {
+  const handleUpdateResult = async () => {
     if (!editingResult.testName.trim() || !editingResult.result.trim()) {
       toast.error('Please enter test name and result');
       return;
     }
 
-    // Check if result is abnormal based on reference range
-    const isAbnormal = checkIfAbnormal(editingResult.result, editingResult.referenceRange);
-    
-    const updatedResult = {
-      ...editingResult,
-      flagged: isAbnormal,
-      severity: isAbnormal ? determineSeverity(editingResult.result, editingResult.referenceRange) : null
-    };
+    setLoading(true);
+    try {
+      // Since backend doesn't have update endpoint for labs, we'll update locally
+      // In a real app, this would call an update API
+      const isAbnormal = checkIfAbnormal(editingResult.result, editingResult.referenceRange);
+      
+      const updatedResult = {
+        ...editingResult,
+        flagged: isAbnormal,
+        severity: isAbnormal ? determineSeverity(editingResult.result, editingResult.referenceRange) : null
+      };
+      
+      setLabResults(prev => prev.map(lab => 
+        lab.id === editingResult.id ? updatedResult : lab
+      ));
+      dispatch({
+        type: 'EDIT_LAB_RESULT',
+        payload: updatedResult
+      });
 
-    dispatch({
-      type: 'EDIT_LAB_RESULT',
-      payload: updatedResult
-    });
-
-    setShowEditModal(false);
-    setEditingResult(null);
-    toast.success('Lab result updated successfully!');
+      setShowEditModal(false);
+      setEditingResult(null);
+      toast.success('Lab result updated successfully!');
+    } catch (error) {
+      console.error('Failed to update lab result:', error);
+      toast.error('Failed to update lab result. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteResult = (resultId) => {
+  const handleDeleteResult = async (resultId) => {
     if (window.confirm('Are you sure you want to delete this lab result?')) {
-      dispatch({
-        type: 'DELETE_LAB_RESULT',
-        payload: resultId
-      });
-      setShowDetailsModal(false);
-      toast.success('Lab result deleted successfully!');
+      setLoading(true);
+      try {
+        // Since backend doesn't have delete endpoint for labs, we'll delete locally
+        // In a real app, this would call a delete API
+        setLabResults(prev => prev.filter(lab => lab.id !== resultId));
+        dispatch({
+          type: 'DELETE_LAB_RESULT',
+          payload: resultId
+        });
+        
+        setShowDetailsModal(false);
+        toast.success('Lab result deleted successfully!');
+      } catch (error) {
+        console.error('Failed to delete lab result:', error);
+        toast.error('Failed to delete lab result. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

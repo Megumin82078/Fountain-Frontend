@@ -167,7 +167,8 @@ const ConditionsPage = () => {
       setShowAddModal(false);
       toast.success('Condition added successfully!');
     } catch (error) {
-      toast.error('Failed to add condition. Please try again.');
+      console.error('Failed to add condition:', error);
+      toast.error(error.message || 'Failed to add condition. Please try again.');
     } finally {
       setAddLoading(false);
     }
