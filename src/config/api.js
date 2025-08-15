@@ -3,11 +3,8 @@
 // In development, we use the Vite proxy to avoid CORS issues
 // In production, we use the direct API URL (assuming CORS is properly configured)
 export const getApiBaseUrl = () => {
-  // Use Vite proxy in development, actual API URL in production
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return '/api';
-  }
-  return import.meta.env.VITE_API_BASE_URL || 'https://fhfastapi.onrender.com';
+  // Always use /api prefix - handled by Vite proxy in dev, Netlify proxy in production
+  return '/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
